@@ -1,26 +1,4 @@
 import pandas as pd
-import matplotlib.pyplot as plt
-
-
-def savePlotDays(dataArray, path):
-    """Función que recibe un array de datos, genera gráficas y las guarda."""
-
-    for data in dataArray:
-        timestamp = pd.to_datetime(data["Timestamp"])
-        date = timestamp[0].date().strftime('%Y-%m-%d')
-        name = "Results of Estimators " + date
-        plt.figure(figsize=(10, 6))
-        plt.plot(timestamp, data["Person Count"], label="Person Count", color="red")
-        plt.plot(timestamp, data["HistGradientBoostingRegressor"], label="HistGradientBoostingRegressor", color="blue")
-        plt.plot(timestamp, data["LGBMRegressor"], label="LGBMRegressor", color="green")
-        plt.plot(timestamp, data["RandomForestRegressor"], label="RandomForestRegressor", color="yellow")
-        plt.xlabel("Timestamp")
-        plt.ylabel("People")
-        plt.legend()
-        plt.title(name)
-        plt.savefig(path + name + ".jpg")
-        plt.clf()
-        plt.close()
 
 
 def parseDataByRaspberry(data):
@@ -179,7 +157,7 @@ def getTotalDevicesInTwoPreviousIntervals(data, timeSeries):
         count = 0
         for mac in uniqueMAC:
             if len(groupToCheck.loc[groupToCheck["MAC"] == mac]) != 0 and \
-                    len(groupToCheckPrevious.loc[groupToCheckPrevious["MAC"] == mac]) != 0:
+               len(groupToCheckPrevious.loc[groupToCheckPrevious["MAC"] == mac]) != 0:
                 count = count + 1
         totalMACTwoPreviousInterval = count
 
@@ -190,8 +168,7 @@ def getTrainingDataset(data, personCount, timeSeries, trainingDataSet):
     """Función que devuelve un conjunto de datos para el algoritmo de Machine Learning y un dataframe con los valores
     acumulados hasta ese momento"""
 
-    columns = ["Timestamp", "Person Count", "Minutes", "N MAC TOTAL", "N MAC RA", "N MAC RB", "N MAC RC", "N MAC RD",
-               "N MAC RE",
+    columns = ["Timestamp", "Person Count", "Minutes", "N MAC TOTAL", "N MAC RA", "N MAC RB", "N MAC RC", "N MAC RD", "N MAC RE",
                "N MAC RDE", "N MAC RCE", "N MAC RCDE", "N MAC RBE", "N MAC MEN RA 10", "N MAC MEN RA 10-30",
                "N MAC MEN RA 30", "N MAC MEN RB 10", "N MAC MEN RB 10-30", "N MAC MEN RB 30", "N MAC MEN RC 10",
                "N MAC MEN RC 10-30", "N MAC MEN RC 30", "N MAC MEN RD 10", "N MAC MEN RD 10-30", "N MAC MEN RD 30",
@@ -216,8 +193,7 @@ def getTrainingDataset(data, personCount, timeSeries, trainingDataSet):
     totalMACTwoPreviousInterval = getTotalDevicesInTwoPreviousIntervals(data, timeSeries)
 
     timestamp = dataNow["Timestamp"].dt.strftime('%Y-%m-%d %H:%M:%S')
-    data = [timestamp.values[0], personCount["personCount"][0], personCount["Minutes"].values[0], totalMAC, totalMACRA,
-            totalMACRB,
+    data = [timestamp.values[0], personCount["personCount"][0], personCount["Minutes"].values[0], totalMAC, totalMACRA, totalMACRB,
             totalMACRC, totalMACRD, totalMACRE, totalMACRDE, totalMACRCE, totalMACRCDE, totalMACRBE, totalMACRA_10,
             totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30, totalMACRC_10,
             totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10,
@@ -238,8 +214,7 @@ def getTrainingSetFormat(trainingSet, finalTrainingDataSet, columns=None):
                    "N MAC RBE", "N MAC MEN RA 10", "N MAC MEN RB 10", "N MAC MEN RC 10", "N MAC MEN RD 10",
                    "N MAC MEN RE 10", "N MAC INTERVALO ANTERIOR", "N MAC DOS INTERVALOS ANTERIORES"]
 
-    finalTrainingSet = pd.DataFrame(trainingSet[["Timestamp", "Person Count", "Minutes"]],
-                                    columns=["Timestamp", "Person Count", "Minutes"])
+    finalTrainingSet = pd.DataFrame(trainingSet[["Timestamp", "Person Count", "Minutes"]], columns=["Timestamp", "Person Count", "Minutes"])
     finalTrainingSet = pd.concat([finalTrainingSet, trainingSet[columns]], axis=1)
 
     finalTrainingSet["Timestamp"] = pd.to_datetime(finalTrainingSet["Timestamp"])

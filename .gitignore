@@ -129,3 +129,10 @@ dmypy.json
 .pyre/
 
 /.idea
+
+# Folders
+/docs
+/figures
+/figuresDate
+/Informes
+/models
