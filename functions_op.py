@@ -426,4 +426,4 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
     trainingDataSet.to_csv("../docs/training-set.csv", sep=";", na_rep="NaN", index=False)
     filterDataSet.to_csv("../docs/filter-training-set.csv", sep=";", na_rep="NaN", index=False)
 
-    return trainingDataSet
+    return trainingDataSet, filterDataSet
