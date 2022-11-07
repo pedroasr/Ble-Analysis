@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pathlib
+from matplotlib import pyplot as plt
 
 
 def readDataFromDirectory(dataPath, personCountPath, statePath):
@@ -326,11 +327,35 @@ def getTotalDevicesInTwoPreviousIntervals(data, state):
     return totalMACTwoPreviousInterval
 
 
+def savePlotColumns(data, path="../figures/", path2="../figuresDate/"):
+    """Función que guarda en una carpeta las gráficas para cada una de las columnas del training set."""
+
+    data["Timestamp"] = pd.to_datetime(data["Timestamp"])
+    date = data["Timestamp"][0].date().strftime('%Y-%m-%d')
+
+    for i in range(3, len(data.columns)):
+        name = data.columns[i] + "_" + date
+        nameDate = date + "_" + data.columns[i]
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(data["Timestamp"], data["Ocupacion"], label="Ocupacion", color="red")
+        plt.plot(data["Timestamp"], data[data.columns[i]], label=data.columns[i], color="blue")
+        plt.xlabel("Timestamp")
+        plt.ylabel("Devices")
+        plt.legend()
+        plt.title(name)
+        plt.savefig(path + name + '.jpg')
+        plt.title(nameDate)
+        plt.savefig(path2 + nameDate + '.jpg')
+        plt.clf()
+        plt.close()
+
+
 def getTrainingDataset(dataArray, personCountArray, stateArray):
     """Función que devuelve un conjunto de datos para el algoritmo de Machine Learning y un dataframe con los valores
     acumulados hasta ese momento"""
 
-    columns = ["Timestamp", "Person Count", "Minutes", "N MAC TOTAL", "N MAC RA", "N MAC RB", "N MAC RC", "N MAC RD",
+    columns = ["Timestamp", "Ocupacion", "Minutes", "N MAC TOTAL", "N MAC RA", "N MAC RB", "N MAC RC", "N MAC RD",
                "N MAC RE",
                "N MAC RDE", "N MAC RCE", "N MAC RCDE", "N MAC RBE", "N MAC MEN RA 10", "N MAC MEN RA 10-30",
                "N MAC MEN RA 30", "N MAC MEN RB 10", "N MAC MEN RB 10-30", "N MAC MEN RB 30", "N MAC MEN RC 10",
@@ -386,6 +411,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
 
         trainingSet = pd.DataFrame(trainingData, columns=columns)
         trainingDataSet = pd.concat([trainingDataSet, trainingSet], ignore_index=True)
+        savePlotColumns(trainingSet)
 
     trainingDataSet.to_csv("../docs/training-set.csv", sep=";", na_rep="NaN", index=False)
 
