@@ -74,11 +74,11 @@ def getTotalDevicesByRaspberry(data, state):
     dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5 = parseDataByRaspberryTime(data)
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
-    dataInterval1.drop(columns="Nº Mensajes", inplace=True)
-    dataInterval2.drop(columns="Nº Mensajes", inplace=True)
-    dataInterval3.drop(columns="Nº Mensajes", inplace=True)
-    dataInterval4.drop(columns="Nº Mensajes", inplace=True)
-    dataInterval5.drop(columns="Nº Mensajes", inplace=True)
+    dataInterval1.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
+    dataInterval2.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
+    dataInterval3.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
+    dataInterval4.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
+    dataInterval5.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
 
     dataList = [dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5]
     statusList = [RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval]
@@ -98,11 +98,11 @@ def getTotalDevicesByRaspberry(data, state):
 
         if initDate not in dataList[i]["Timestamp"].unique():
             dataList[i] = pd.concat(
-                [pd.DataFrame([[initDate, np.nan, np.nan]], columns=["Timestamp", "Raspberry", "MAC"]), dataList[i]])
+                [pd.DataFrame([[initDate, np.nan]], columns=["Timestamp", "MAC"]), dataList[i]])
 
         if endDate not in dataList[i]["Timestamp"].unique():
             dataList[i] = pd.concat(
-                [dataList[i], pd.DataFrame([[endDate, np.nan, np.nan]], columns=["Timestamp", "Raspberry", "MAC"])])
+                [dataList[i], pd.DataFrame([[endDate, np.nan]], columns=["Timestamp", "MAC"])])
 
         dataList[i].set_index("Timestamp", inplace=True)
         finalDataList.append(dataList[i].resample("5T").asfreq())
@@ -143,7 +143,7 @@ def getTotalDevicesByPairRaspberries(data, state):
 
     for i in range(len(dataList)):
         try:
-            dataList[i].loc[statusList[i], "MAC"] = np.nan
+            dataList[i].loc[statusList[i], ["MAC", "Raspberry"]] = np.nan
         except (Exception,):
             pass
 
@@ -351,6 +351,51 @@ def savePlotColumns(data, path="../figures/", path2="../figuresDate/"):
         plt.close()
 
 
+def checkTrainingSet(data):
+    """Función que comprueba que los valores obtenidos para el conjunto de entrenamiento tenga sentido. Devolverá un dataframe con los resultados"""
+
+    checkDataframe = pd.DataFrame(
+        columns=["Timestamp", "Maximum number of MAC", "Maximum number of Pair MAC", "Number of NaN"])
+
+    trainingSetCheck = data.copy()
+    trainingSetCheck["Timestamp"] = pd.to_datetime(trainingSetCheck["Timestamp"])
+    date = trainingSetCheck["Timestamp"][0].date().strftime('%Y-%m-%d')
+    trainingSetCheck = trainingSetCheck.loc[:,
+                       (trainingSetCheck.columns != "Timestamp") & (trainingSetCheck.columns != "Ocupacion") & (
+                                   trainingSetCheck.columns != "Minutes")]
+
+    nanNumber = trainingSetCheck.isna().sum()
+    print(nanNumber)
+
+    '''
+        group = group.fillna(0)
+        arr = group["N MAC TOTAL"] >= (group["N MAC RCE"] + group["N MAC RDE"] + group["N MAC RCDE"] + group["N MAC RBE"])
+
+        if len(set(arr)) == 1:
+            checkNumberPairMAC = "OK"
+        else:
+            checkNumberPairMAC = "ERROR"
+        boolCheck = []
+        for column in group.columns:
+            arr = group["N MAC TOTAL"] >= group[column]
+            if len(set(arr)) == 1:
+                boolCheck.append(True)
+            else:
+                boolCheck.append(False)
+
+        if len(set(boolCheck)) == 1:
+            checkNumberMAC = "OK"
+        else:
+            checkNumberMAC = "ERROR"
+
+        dt = pd.DataFrame([[date, checkNumberMAC, checkNumberPairMAC, nanNumber]],columns=["Timestamp", "Maximum number of MAC", "Maximum number of Pair MAC", "Number of NaN"])
+        checkDataframe = pd.concat([checkDataframe, dt])
+    print(checkDataframe)
+
+    return checkDataframe
+'''
+
+
 def getTrainingDataset(dataArray, personCountArray, stateArray):
     """Función que devuelve un conjunto de datos para el algoritmo de Machine Learning y un dataframe con los valores
     acumulados hasta ese momento"""
@@ -412,6 +457,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
         trainingSet = pd.DataFrame(trainingData, columns=columns)
         trainingDataSet = pd.concat([trainingDataSet, trainingSet], ignore_index=True)
         savePlotColumns(trainingSet)
+        checkTrainingSet(trainingSet)
 
     trainingDataSet.to_csv("../docs/training-set.csv", sep=";", na_rep="NaN", index=False)
 
