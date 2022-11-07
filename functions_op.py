@@ -351,7 +351,6 @@ def savePlotColumns(data, path="../figures/", path2="../figuresDate/"):
         plt.close()
 
 
-
 def getTrainingDataset(dataArray, personCountArray, stateArray):
     """Función que devuelve un conjunto de datos para el algoritmo de Machine Learning y un dataframe con los valores
     acumulados hasta ese momento"""
@@ -363,7 +362,13 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
                "N MAC MEN RC 10-30", "N MAC MEN RC 30", "N MAC MEN RD 10", "N MAC MEN RD 10-30", "N MAC MEN RD 30",
                "N MAC MEN RE 10", "N MAC MEN RE 10-30", "N MAC MEN RE 30", "N MAC INTERVALO ANTERIOR",
                "N MAC DOS INTERVALOS ANTERIORES"]
+
+    columnsFinal = ["Timestamp", "Ocupacion", "Minutes", "N MAC RA", "N MAC RB", "N MAC RC", "N MAC RD", "N MAC RE", "N MAC RDE", "N MAC RCE", "N MAC RCDE",
+                    "N MAC RBE", "N MAC MEN RA 10", "N MAC MEN RB 10", "N MAC MEN RC 10", "N MAC MEN RD 10",
+                    "N MAC MEN RE 10", "N MAC INTERVALO ANTERIOR", "N MAC DOS INTERVALOS ANTERIORES"]
+
     trainingDataSet = pd.DataFrame(columns=columns)
+    filterDataSet = pd.DataFrame(columns=columnsFinal)
     sample = 5
     length = len(dataArray[0]["Timestamp"].unique())
     minutes = np.linspace(0, (length - 1) * sample, length, dtype=int)
@@ -412,30 +417,13 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
 
         trainingSet = pd.DataFrame(trainingData, columns=columns)
         trainingDataSet = pd.concat([trainingDataSet, trainingSet], ignore_index=True)
+
         savePlotColumns(trainingSet)
 
+        filterSet = trainingSet[columnsFinal]
+        filterDataSet = pd.concat([filterDataSet, filterSet], ignore_index=True)
+
     trainingDataSet.to_csv("../docs/training-set.csv", sep=";", na_rep="NaN", index=False)
+    filterDataSet.to_csv("../docs/filter-training-set.csv", sep=";", na_rep="NaN", index=False)
 
     return trainingDataSet
-
-
-'''
-def getTrainingSetFormat(trainingSet, finalTrainingDataSet, columns=None):
-    """Función que devuelve un Dataframe con las columnas incluidas en el argumento columns que serán las que reciba el
-    estimador finalmente. También devuelve el histórico de los anteriores resultados."""
-
-    if columns is None:
-        columns = ["N MAC RA", "N MAC RB", "N MAC RC", "N MAC RD", "N MAC RE", "N MAC RDE", "N MAC RCE", "N MAC RCDE",
-                   "N MAC RBE", "N MAC MEN RA 10", "N MAC MEN RB 10", "N MAC MEN RC 10", "N MAC MEN RD 10",
-                   "N MAC MEN RE 10", "N MAC INTERVALO ANTERIOR", "N MAC DOS INTERVALOS ANTERIORES"]
-
-    finalTrainingSet = pd.DataFrame(trainingSet[["Timestamp", "Person Count", "Minutes"]],
-                                    columns=["Timestamp", "Person Count", "Minutes"])
-    finalTrainingSet = pd.concat([finalTrainingSet, trainingSet[columns]], axis=1)
-
-    finalTrainingSet["Timestamp"] = pd.to_datetime(finalTrainingSet["Timestamp"])
-
-    finalTrainingDataSet = pd.concat([finalTrainingDataSet, finalTrainingSet])
-
-    return finalTrainingSet, finalTrainingDataSet
-'''
