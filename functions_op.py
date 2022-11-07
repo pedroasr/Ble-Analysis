@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import pathlib
-import os
 
 
 def readDataFromDirectory(dataPath, personCountPath, statePath):
@@ -214,7 +213,8 @@ def getTotalDeviceByMessageNumber(data, state):
     initDate = pd.to_datetime(day + " 07:00:00")
     endDate = pd.to_datetime(day + " 21:55:00")
 
-    dataList = [totalMACRA_10, totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30, totalMACRC_10,
+    dataList = [totalMACRA_10, totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30,
+                totalMACRC_10,
                 totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10,
                 totalMACRE_1030, totalMACRE_30]
     finalDataList = []
@@ -245,57 +245,53 @@ def getTotalDevicesInPreviousInterval(data, state):
     """Función que devuelve una lista con el número de dispositivos registrados en el intervalo de tiempo actual y el
     anterior."""
 
+    dataCopy = data.copy()
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
-    data[(data["Timestamp"].isin(RADownInterval)) & (data["Raspberry"].isin(["Raspberry A"]))] = np.nan
-    data[(data["Timestamp"].isin(RBDownInterval)) & (data["Raspberry"].isin(["Raspberry B"]))] = np.nan
-    data[(data["Timestamp"].isin(RCDownInterval)) & (data["Raspberry"].isin(["Raspberry C"]))] = np.nan
-    data[(data["Timestamp"].isin(RDDownInterval)) & (data["Raspberry"].isin(["Raspberry D"]))] = np.nan
-    data[(data["Timestamp"].isin(REDownInterval)) & (data["Raspberry"].isin(["Raspberry E"]))] = np.nan
+    dataCopy[(dataCopy["Timestamp"].isin(RADownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry A"]))] = np.nan
+    dataCopy[(dataCopy["Timestamp"].isin(RBDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry B"]))] = np.nan
+    dataCopy[(dataCopy["Timestamp"].isin(RCDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry C"]))] = np.nan
+    dataCopy[(dataCopy["Timestamp"].isin(RDDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry D"]))] = np.nan
+    dataCopy[(dataCopy["Timestamp"].isin(REDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry E"]))] = np.nan
 
-    data.set_index("Timestamp", inplace=True)
-    data.dropna(inplace=True)
-    data.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
+    dataCopy.set_index("Timestamp", inplace=True)
+    dataCopy.dropna(inplace=True)
+    dataCopy.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
 
-    timestampSplit = [data.loc[date].values for date in data.index.unique()]
-    #for i in range(1, len(timestampSplit)):
+    timestampSplit = [dataCopy.loc[date]["MAC"].unique() for date in dataCopy.index.unique()]
+    totalMACPreviousInterval = [0]
+    for i in range(1, len(timestampSplit)):
+        totalMACPreviousInterval.append(len(set(timestampSplit[i]) & set(timestampSplit[i - 1])))
 
-
-
-    #print(list[0])
-    '''
-    group.reset_index(inplace=True)
-    groupToCheck.reset_index(inplace=True)
-    count = 0
-    uniqueMAC = group["MAC"].unique()
-    for mac in uniqueMAC:
-        if len(groupToCheck.loc[groupToCheck["MAC"] == mac]) != 0:
-            count = count + 1
-    totalMACPreviousInterval = count
+    totalMACPreviousInterval = np.array(totalMACPreviousInterval)
 
     return totalMACPreviousInterval
-    '''
 
-def getTotalDevicesInTwoPreviousIntervals(data, timeSeries):
+
+def getTotalDevicesInTwoPreviousIntervals(data, state):
     """Función que devuelve una lista con el número de dispositivos registrados en el intervalo de tiempo actual y los
     dos anteriores."""
 
-    if len(timeSeries) < 3:
-        totalMACTwoPreviousInterval = 0
-    else:
-        group = data.loc[data["Timestamp"] == timeSeries[-1]]
-        groupToCheck = data.loc[data["Timestamp"] == timeSeries[-2]]
-        groupToCheckPrevious = data.loc[data["Timestamp"] == timeSeries[-3]]
-        group.reset_index(inplace=True)
-        groupToCheck.reset_index(inplace=True)
-        groupToCheckPrevious.reset_index(inplace=True)
-        uniqueMAC = group["MAC"].unique()
-        count = 0
-        for mac in uniqueMAC:
-            if len(groupToCheck.loc[groupToCheck["MAC"] == mac]) != 0 and \
-                len(groupToCheckPrevious.loc[groupToCheckPrevious["MAC"] == mac]) != 0:
-                count = count + 1
-        totalMACTwoPreviousInterval = count
+    dataCopy = data.copy()
+    RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
+
+    dataCopy[(dataCopy["Timestamp"].isin(RADownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry A"]))] = np.nan
+    dataCopy[(dataCopy["Timestamp"].isin(RBDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry B"]))] = np.nan
+    dataCopy[(dataCopy["Timestamp"].isin(RCDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry C"]))] = np.nan
+    dataCopy[(dataCopy["Timestamp"].isin(RDDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry D"]))] = np.nan
+    dataCopy[(dataCopy["Timestamp"].isin(REDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry E"]))] = np.nan
+
+    dataCopy.set_index("Timestamp", inplace=True)
+    dataCopy.dropna(inplace=True)
+    dataCopy.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
+
+    timestampSplit = [dataCopy.loc[date]["MAC"].unique() for date in dataCopy.index.unique()]
+    totalMACTwoPreviousInterval = [0, 0]
+    for i in range(2, len(timestampSplit)):
+        totalMACTwoPreviousInterval.append(
+            len(set(timestampSplit[i]) & set(timestampSplit[i - 1]) & set(timestampSplit[i - 2])))
+
+    totalMACTwoPreviousInterval = np.array(totalMACTwoPreviousInterval)
 
     return totalMACTwoPreviousInterval
 
@@ -311,6 +307,10 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
                "N MAC MEN RC 10-30", "N MAC MEN RC 30", "N MAC MEN RD 10", "N MAC MEN RD 10-30", "N MAC MEN RD 30",
                "N MAC MEN RE 10", "N MAC MEN RE 10-30", "N MAC MEN RE 30", "N MAC INTERVALO ANTERIOR",
                "N MAC DOS INTERVALOS ANTERIORES"]
+    trainingDataSet = pd.DataFrame(columns=columns)
+    sample = 5
+    length = len(dataArray[0]["Timestamp"].unique())
+    minutes = np.linspace(0, (length - 1) * sample, length, dtype=int)
 
     for i in range(len(dataArray)):
         data = dataArray[i]
@@ -337,28 +337,32 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
 
         totalMACPreviousInterval = getTotalDevicesInPreviousInterval(data, RDownInterval)
 
-    '''
+        totalMACTwoPreviousInterval = getTotalDevicesInTwoPreviousIntervals(data, RDownInterval)
+
+        timestamp = data["Timestamp"].dt.strftime('%Y-%m-%d %H:%M:%S').unique()
+
+        trainingData = np.array(np.transpose([timestamp, personCount["Ocupacion"], minutes, totalMAC,
+                                              totalMACRA,
+                                              totalMACRB,
+                                              totalMACRC, totalMACRD, totalMACRE, totalMACRDE, totalMACRCE,
+                                              totalMACRCDE, totalMACRBE,
+                                              totalMACRA_10,
+                                              totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030,
+                                              totalMACRB_30, totalMACRC_10,
+                                              totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030,
+                                              totalMACRD_30, totalMACRE_10,
+                                              totalMACRE_1030, totalMACRE_30, totalMACPreviousInterval,
+                                              totalMACTwoPreviousInterval]))
+
+        trainingSet = pd.DataFrame(trainingData, columns=columns)
+        trainingDataSet = pd.concat([trainingDataSet, trainingSet], ignore_index=True)
+
+    trainingDataSet.to_csv("../docs/training-set.csv", sep=";", na_rep="NaN", index=False)
+
+    return trainingDataSet
 
 
-    
-
-    totalMACTwoPreviousInterval = getTotalDevicesInTwoPreviousIntervals(data, timeSeries)
-
-    timestamp = dataNow["Timestamp"].dt.strftime('%Y-%m-%d %H:%M:%S')
-    data = [timestamp.values[0], personCount["personCount"][0], personCount["Minutes"].values[0], totalMAC, totalMACRA,
-            totalMACRB,
-            totalMACRC, totalMACRD, totalMACRE, totalMACRDE, totalMACRCE, totalMACRCDE, totalMACRBE, totalMACRA_10,
-            totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30, totalMACRC_10,
-            totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10,
-            totalMACRE_1030, totalMACRE_30, totalMACPreviousInterval, totalMACTwoPreviousInterval]
-
-    trainingSet = pd.DataFrame([data], columns=columns)
-    trainingDataSet = pd.concat([trainingDataSet, trainingSet], ignore_index=True)
-
-    return trainingSet, trainingDataSet
 '''
-
-
 def getTrainingSetFormat(trainingSet, finalTrainingDataSet, columns=None):
     """Función que devuelve un Dataframe con las columnas incluidas en el argumento columns que serán las que reciba el
     estimador finalmente. También devuelve el histórico de los anteriores resultados."""
@@ -377,3 +381,4 @@ def getTrainingSetFormat(trainingSet, finalTrainingDataSet, columns=None):
     finalTrainingDataSet = pd.concat([finalTrainingDataSet, finalTrainingSet])
 
     return finalTrainingSet, finalTrainingDataSet
+'''
