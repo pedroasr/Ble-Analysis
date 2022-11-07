@@ -9,7 +9,6 @@ def readDataFromDirectory(dataPath, personCountPath, statePath):
     dataArray = []
     personCountArray = []
     stateArray = []
-    dates = []
     dataPath = pathlib.Path(dataPath)
     personCountPath = pathlib.Path(personCountPath)
     statePath = pathlib.Path(statePath)
@@ -17,8 +16,8 @@ def readDataFromDirectory(dataPath, personCountPath, statePath):
         data = pd.read_csv(file, sep=';', usecols=["Timestamp int.", "Raspberry", "Nº Mensajes", "MAC"])
         data["Timestamp int."] = pd.to_datetime(data["Timestamp int."], dayfirst=True)
         data = data.rename(columns={"Timestamp int.": "Timestamp"})
+        data = data.drop(data[data["MAC"] == "00:00:00:00:00:00"].index).reset_index(drop=True)
         dataArray.append(data)
-        dates.append(data["Timestamp"].dt.date[0])
 
     for file in personCountPath.iterdir():
         personCount = pd.read_csv(file, sep=';', usecols=["Fecha", "Hora", "Ocupacion", "Estado"])
@@ -38,7 +37,7 @@ def readDataFromDirectory(dataPath, personCountPath, statePath):
         state.set_index("Timestamp", inplace=True)
         stateArray.append(state)
 
-    return dataArray, personCountArray, stateArray, dates
+    return dataArray, personCountArray, stateArray
 
 
 def parseDataByRaspberry(data):
@@ -74,17 +73,38 @@ def getTotalDevicesByRaspberry(data, state):
     dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5 = parseDataByRaspberryTime(data)
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
-    dataInterval1.loc[RADownInterval, "MAC"] = np.nan
-    dataInterval2.loc[RBDownInterval, "MAC"] = np.nan
-    dataInterval3.loc[RCDownInterval, "MAC"] = np.nan
-    dataInterval4.loc[RDDownInterval, "MAC"] = np.nan
-    dataInterval5.loc[REDownInterval, "MAC"] = np.nan
+    dataList = [dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5]
+    statusList = [RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval]
+    finalDataList = []
 
-    totalMACRA = dataInterval1["MAC"].values
-    totalMACRB = dataInterval2["MAC"].values
-    totalMACRC = dataInterval3["MAC"].values
-    totalMACRD = dataInterval4["MAC"].values
-    totalMACRE = dataInterval5["MAC"].values
+    day = dataInterval1.index.get_level_values(0).date[0].strftime(format="%Y-%m-%d")
+    initDate = pd.to_datetime(day + " 07:00:00")
+    endDate = pd.to_datetime(day + " 21:55:00")
+
+    for i in range(len(dataList)):
+        try:
+            dataList[i].loc[statusList[i], "MAC"] = np.nan
+        except (Exception,):
+            pass
+
+        dataList[i].reset_index(inplace=True)
+
+        if initDate not in dataList[i]["Timestamp"].unique():
+            dataList[i] = pd.concat([pd.DataFrame([[initDate, np.nan, np.nan, np.nan]], columns=["Timestamp", "Raspberry", "Nº Mensajes", "MAC"]), dataList[i]])
+
+        if endDate not in dataList[i]["Timestamp"].unique():
+            dataList[i] = pd.concat([dataList[i], pd.DataFrame([[endDate, np.nan, np.nan, np.nan]], columns=["Timestamp", "Raspberry", "Nº Mensajes", "MAC"])])
+
+        dataList[i].set_index("Timestamp", inplace=True)
+        finalDataList.append(dataList[i].resample("5T").asfreq())
+
+    totalMACRA, totalMACRB, totalMACRC, totalMACRD, totalMACRE = finalDataList
+
+    totalMACRA = totalMACRA["MAC"].values
+    totalMACRB = totalMACRB["MAC"].values
+    totalMACRC = totalMACRC["MAC"].values
+    totalMACRD = totalMACRD["MAC"].values
+    totalMACRE = totalMACRE["MAC"].values
 
     return totalMACRA, totalMACRB, totalMACRC, totalMACRD, totalMACRE
 
@@ -142,7 +162,7 @@ def getTotalDevicesByPairRaspberries(data, state):
     day = group_CDE.index.get_level_values(0).date[0].strftime(format="%Y-%m-%d")
     initDate = pd.to_datetime(day + " 07:00:00")
     endDate = pd.to_datetime(day + " 21:55:00")
-
+    print(group_CDE)
     dataList = [group_CDE, group_CE, group_DE, group_BE]
     finalDataList = []
 
@@ -341,6 +361,8 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
 
         timestamp = data["Timestamp"].dt.strftime('%Y-%m-%d %H:%M:%S').unique()
 
+
+'''
         trainingData = np.array(np.transpose([timestamp, personCount["Ocupacion"], minutes, totalMAC,
                                               totalMACRA,
                                               totalMACRB,
@@ -360,7 +382,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
     trainingDataSet.to_csv("../docs/training-set.csv", sep=";", na_rep="NaN", index=False)
 
     return trainingDataSet
-
+'''
 
 '''
 def getTrainingSetFormat(trainingSet, finalTrainingDataSet, columns=None):
