@@ -73,6 +73,12 @@ def getTotalDevicesByRaspberry(data, state):
     dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5 = parseDataByRaspberryTime(data)
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
+    dataInterval1.drop(columns="Nº Mensajes", inplace=True)
+    dataInterval2.drop(columns="Nº Mensajes", inplace=True)
+    dataInterval3.drop(columns="Nº Mensajes", inplace=True)
+    dataInterval4.drop(columns="Nº Mensajes", inplace=True)
+    dataInterval5.drop(columns="Nº Mensajes", inplace=True)
+
     dataList = [dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5]
     statusList = [RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval]
     finalDataList = []
@@ -90,10 +96,12 @@ def getTotalDevicesByRaspberry(data, state):
         dataList[i].reset_index(inplace=True)
 
         if initDate not in dataList[i]["Timestamp"].unique():
-            dataList[i] = pd.concat([pd.DataFrame([[initDate, np.nan, np.nan, np.nan]], columns=["Timestamp", "Raspberry", "Nº Mensajes", "MAC"]), dataList[i]])
+            dataList[i] = pd.concat(
+                [pd.DataFrame([[initDate, np.nan, np.nan]], columns=["Timestamp", "Raspberry", "MAC"]), dataList[i]])
 
         if endDate not in dataList[i]["Timestamp"].unique():
-            dataList[i] = pd.concat([dataList[i], pd.DataFrame([[endDate, np.nan, np.nan, np.nan]], columns=["Timestamp", "Raspberry", "Nº Mensajes", "MAC"])])
+            dataList[i] = pd.concat(
+                [dataList[i], pd.DataFrame([[endDate, np.nan, np.nan]], columns=["Timestamp", "Raspberry", "MAC"])])
 
         dataList[i].set_index("Timestamp", inplace=True)
         finalDataList.append(dataList[i].resample("5T").asfreq())
@@ -128,11 +136,15 @@ def getTotalDevicesByPairRaspberries(data, state):
     nDevicesIntervalDataRDMerge = dataInterval4.set_index("Timestamp")
     nDevicesIntervalDataREMerge = dataInterval5.set_index("Timestamp")
 
-    nDevicesIntervalDataRAMerge.loc[RADownInterval, "MAC"] = np.nan
-    nDevicesIntervalDataRBMerge.loc[RBDownInterval, "MAC"] = np.nan
-    nDevicesIntervalDataRCMerge.loc[RCDownInterval, "MAC"] = np.nan
-    nDevicesIntervalDataRDMerge.loc[RDDownInterval, "MAC"] = np.nan
-    nDevicesIntervalDataREMerge.loc[REDownInterval, "MAC"] = np.nan
+    dataList = [nDevicesIntervalDataRAMerge, nDevicesIntervalDataRBMerge, nDevicesIntervalDataRCMerge,
+                nDevicesIntervalDataRDMerge, nDevicesIntervalDataREMerge]
+    statusList = [RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval]
+
+    for i in range(len(dataList)):
+        try:
+            dataList[i].loc[statusList[i], "MAC"] = np.nan
+        except (Exception,):
+            pass
 
     nDevicesIntervalDataRDEMerge = nDevicesIntervalDataRDMerge.merge(nDevicesIntervalDataREMerge, how='outer',
                                                                      on=("Timestamp", "MAC"), copy=False,
@@ -156,13 +168,10 @@ def getTotalDevicesByPairRaspberries(data, state):
     group_BE = group.loc[(group["Raspberry"] == 0) & (group["Raspberry_b"] == 1) & (group["Raspberry_c"] == 0) & (
             group["Raspberry_d"] == 0) & (group["Raspberry_e"] == 1)]
 
-    # Por cada MAC en cada intervalo de tiempo, existe un valor de la columna Timestamp, es decir, si hay 4 MAC en un intervalo,
-    # Se generarán 4 filas con el mismo valor de Timestamp. Si cuento las veces que se repite cada intervalo, sé cuantas MAC hay.
-
     day = group_CDE.index.get_level_values(0).date[0].strftime(format="%Y-%m-%d")
     initDate = pd.to_datetime(day + " 07:00:00")
     endDate = pd.to_datetime(day + " 21:55:00")
-    print(group_CDE)
+
     dataList = [group_CDE, group_CE, group_DE, group_BE]
     finalDataList = []
 
@@ -176,9 +185,8 @@ def getTotalDevicesByPairRaspberries(data, state):
         if endDate not in column:
             column = pd.concat([column, pd.Series(np.nan, index=[endDate], name="Timestamp")])
 
-        finalDataList.append(column.resample("5T").last().values)
+        finalDataList.append(column.resample("5T").asfreq().values)
 
-    finalDataList = tuple(finalDataList)
     totalMACRCDE, totalMACRCE, totalMACRDE, totalMACRBE = finalDataList
 
     return totalMACRCDE, totalMACRCE, totalMACRDE, totalMACRBE
@@ -197,11 +205,14 @@ def getTotalDeviceByMessageNumber(data, state):
     dataInterval4 = dataInterval4.set_index("Timestamp")
     dataInterval5 = dataInterval5.set_index("Timestamp")
 
-    dataInterval1.loc[RADownInterval, "MAC"] = np.nan
-    dataInterval2.loc[RBDownInterval, "MAC"] = np.nan
-    dataInterval3.loc[RCDownInterval, "MAC"] = np.nan
-    dataInterval4.loc[RDDownInterval, "MAC"] = np.nan
-    dataInterval5.loc[REDownInterval, "MAC"] = np.nan
+    dataList = [dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5]
+    statusList = [RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval]
+
+    for i in range(len(dataList)):
+        try:
+            dataList[i].loc[statusList[i], "MAC"] = np.nan
+        except (Exception,):
+            pass
 
     dataInterval1 = dataInterval1.groupby(["Timestamp", "MAC"]).sum()
     dataInterval2 = dataInterval2.groupby(["Timestamp", "MAC"]).sum()
@@ -249,9 +260,8 @@ def getTotalDeviceByMessageNumber(data, state):
         if endDate not in column:
             column = pd.concat([column, pd.Series(np.nan, index=[endDate], name="Timestamp")])
 
-        finalDataList.append(column.resample("5T").last().values)
+        finalDataList.append(column.resample("5T").asfreq().values)
 
-    finalDataList = tuple(finalDataList)
     totalMACRA_10, totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30, totalMACRC_10, \
     totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10, \
     totalMACRE_1030, totalMACRE_30 = finalDataList
@@ -361,8 +371,6 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
 
         timestamp = data["Timestamp"].dt.strftime('%Y-%m-%d %H:%M:%S').unique()
 
-
-'''
         trainingData = np.array(np.transpose([timestamp, personCount["Ocupacion"], minutes, totalMAC,
                                               totalMACRA,
                                               totalMACRB,
@@ -382,7 +390,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
     trainingDataSet.to_csv("../docs/training-set.csv", sep=";", na_rep="NaN", index=False)
 
     return trainingDataSet
-'''
+
 
 '''
 def getTrainingSetFormat(trainingSet, finalTrainingDataSet, columns=None):
