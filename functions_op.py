@@ -327,7 +327,7 @@ def getTotalDevicesInTwoPreviousIntervals(data, state):
     return totalMACTwoPreviousInterval
 
 
-def savePlotColumns(data, path="../figures/", path2="../figuresDate/"):
+def savePlotColumns(data, path, path2):
     """Función que guarda en una carpeta las gráficas para cada una de las columnas del training set."""
 
     data["Timestamp"] = pd.to_datetime(data["Timestamp"])
@@ -458,13 +458,15 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
         trainingSet = pd.DataFrame(trainingData, columns=columns)
         trainingDataSet = pd.concat([trainingDataSet, trainingSet], ignore_index=True)
 
-        savePlotColumns(trainingSet)
+        savePlotColumns(trainingSet, "../figures/", "../figuresDate/")
 
         filterSet = trainingSet[columnsFilter]
         filterDataSet = pd.concat([filterDataSet, filterSet], ignore_index=True)
 
         filledSet = fillTrainingSet(filterSet)
         filledDataSet = pd.concat([filledDataSet, filledSet], ignore_index=True)
+
+        savePlotColumns(filledSet, "../figuresFilled/", "../figuresDateFilled/")
 
     trainingDataSet.to_csv("../docs/training-set.csv", sep=";", na_rep="NaN", index=False)
     filterDataSet.to_csv("../docs/filter-training-set.csv", sep=";", na_rep="NaN", index=False)
