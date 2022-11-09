@@ -351,6 +351,44 @@ def savePlotColumns(data, path="../figures/", path2="../figuresDate/"):
         plt.close()
 
 
+def fillTrainingSet(data):
+    """Función que completa el conjunto de entrenamiento filtrado rellenando los valores nulos o eliminando las filas
+    imposibles de interpolar"""
+
+    dataCopy = data.copy()
+
+    """
+    dataCopy["Is NaN"] = pd.isna(dataCopy["N MAC RA"])
+    dataCopy["crossing"] = (dataCopy["Is NaN"] != dataCopy["Is NaN"].shift()).cumsum()
+    dataCopy["count"] = dataCopy.groupby(["Is NaN", "crossing"]).cumcount(ascending=False)
+    dataCopy.loc[dataCopy["Is NaN"] == False, "count"] = 0
+    dataCopy.drop(["crossing", "Is NaN"], axis=1, inplace=True)
+
+    go = True
+    while go:
+        maxNaN = dataCopy["count"].max()
+        if maxNaN > 5:
+            index = dataCopy["count"].idxmax()
+            dataCopy.drop(range(index, index + maxNaN + 1), axis=0, inplace=True)
+        else:
+            go = False
+            dataCopy.drop(["count"], axis=1, inplace=True)
+
+    
+
+    trainingSetFill = dataCopy.resample("5T").mean().interpolate()
+    trainingSetFill = trainingSetFill.loc[dataCopy.index]
+    filledSet = []
+    """
+
+    dataCopy.set_index("Timestamp", inplace=True)
+    filledSet = dataCopy.resample("5T").mean().interpolate(method='polynomial', order=2)
+    filledSet.reset_index(inplace=True)
+    filledSet = filledSet.round(3)
+
+    return filledSet
+
+
 def getTrainingDataset(dataArray, personCountArray, stateArray):
     """Función que devuelve un conjunto de datos para el algoritmo de Machine Learning y un dataframe con los valores
     acumulados hasta ese momento"""
@@ -363,12 +401,14 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
                "N MAC MEN RE 10", "N MAC MEN RE 10-30", "N MAC MEN RE 30", "N MAC INTERVALO ANTERIOR",
                "N MAC DOS INTERVALOS ANTERIORES"]
 
-    columnsFinal = ["Timestamp", "Ocupacion", "Minutes", "N MAC RA", "N MAC RB", "N MAC RC", "N MAC RD", "N MAC RE", "N MAC RDE", "N MAC RCE", "N MAC RCDE",
-                    "N MAC RBE", "N MAC MEN RA 10", "N MAC MEN RB 10", "N MAC MEN RC 10", "N MAC MEN RD 10",
-                    "N MAC MEN RE 10", "N MAC INTERVALO ANTERIOR", "N MAC DOS INTERVALOS ANTERIORES"]
+    columnsFilter = ["Timestamp", "Ocupacion", "Minutes", "N MAC RA", "N MAC RB", "N MAC RC", "N MAC RD", "N MAC RE",
+                     "N MAC RDE", "N MAC RCE", "N MAC RCDE",
+                     "N MAC RBE", "N MAC MEN RA 10", "N MAC MEN RB 10", "N MAC MEN RC 10", "N MAC MEN RD 10",
+                     "N MAC MEN RE 10", "N MAC INTERVALO ANTERIOR", "N MAC DOS INTERVALOS ANTERIORES"]
 
     trainingDataSet = pd.DataFrame(columns=columns)
-    filterDataSet = pd.DataFrame(columns=columnsFinal)
+    filterDataSet = pd.DataFrame(columns=columnsFilter)
+    filledDataSet = pd.DataFrame(columns=columnsFilter)
     sample = 5
     length = len(dataArray[0]["Timestamp"].unique())
     minutes = np.linspace(0, (length - 1) * sample, length, dtype=int)
@@ -420,10 +460,14 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
 
         savePlotColumns(trainingSet)
 
-        filterSet = trainingSet[columnsFinal]
+        filterSet = trainingSet[columnsFilter]
         filterDataSet = pd.concat([filterDataSet, filterSet], ignore_index=True)
+
+        filledSet = fillTrainingSet(filterSet)
+        filledDataSet = pd.concat([filledDataSet, filledSet], ignore_index=True)
 
     trainingDataSet.to_csv("../docs/training-set.csv", sep=";", na_rep="NaN", index=False)
     filterDataSet.to_csv("../docs/filter-training-set.csv", sep=";", na_rep="NaN", index=False)
+    filledDataSet.to_csv("../docs/filled-training-set.csv", sep=";", na_rep="NaN", index=False)
 
-    return trainingDataSet, filterDataSet
+    return trainingDataSet, filterDataSet, filledDataSet
