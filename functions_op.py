@@ -4,7 +4,7 @@ import pathlib
 from matplotlib import pyplot as plt
 
 
-def setDateTimeLimits(data, values=None, day=None, isDf=True):
+def setDateTimeLimits(data, values, day, isDf=True):
     """Función que devuelve un conjunto de datos con los límites de tiempo establecidos."""
 
     initDate = pd.to_datetime(day + " 07:00:00")
@@ -23,23 +23,13 @@ def setDateTimeLimits(data, values=None, day=None, isDf=True):
             data = pd.concat([data, dfEnd])
 
     else:
-        if values is None:
-            dfInit = pd.Series(initDate, name="Timestamp")
-            dfEnd = pd.Series(endDate, name="Timestamp")
-            if initDate not in data.values:
-                data = pd.concat([dfInit, data])
+        dfInit = pd.Series(values, index=[initDate], name="Timestamp")
+        dfEnd = pd.Series(values, index=[endDate], name="Timestamp")
+        if initDate not in data:
+            data = pd.concat([dfInit, data])
 
-            if endDate not in data.values:
-                data = pd.concat([data, dfEnd])
-        else:
-            dfInit = pd.Series(values, index=[initDate], name="Timestamp")
-            dfEnd = pd.Series(values, index=[endDate], name="Timestamp")
-            if initDate not in data:
-                data = pd.concat([dfInit, data])
-
-            if endDate not in data:
-                data = pd.concat([data, dfEnd])
-
+        if endDate not in data:
+            data = pd.concat([data, dfEnd])
 
     return data
 
@@ -463,9 +453,11 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
 
         totalMACTwoPreviousInterval = getTotalDevicesInTwoPreviousIntervals(data, RDownInterval)
 
-        timestamp = data["Timestamp"].dt.strftime('%Y-%m-%d %H:%M:%S').unique()
-        timestamp = pd.Series(timestamp, name="Timestamp")
-        timestamp = setDateTimeLimits(timestamp, None, day, False)
+        timestamp = data["Timestamp"].unique()
+        timestamp = pd.Series(np.zeros(len(timestamp)), index=timestamp, name="Timestamp")
+        timestamp = setDateTimeLimits(timestamp, 0, day, False)
+        timestamp = timestamp.resample("5T").asfreq()
+        timestamp = timestamp.index.strftime('%Y-%m-%d %H:%M:%S')
 
         trainingData = np.array(np.transpose([timestamp, personCount["Ocupacion"].values, minutes, totalMAC,
                                               totalMACRA,
@@ -479,7 +471,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
                                               totalMACRD_30, totalMACRE_10,
                                               totalMACRE_1030, totalMACRE_30, totalMACPreviousInterval,
                                               totalMACTwoPreviousInterval]))
-
+        print(trainingData)
         trainingSet = pd.DataFrame(trainingData, columns=columns)
 
         trainingDataSet = pd.concat([trainingDataSet, trainingSet], ignore_index=True)
