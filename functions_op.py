@@ -4,6 +4,46 @@ import pathlib
 from matplotlib import pyplot as plt
 
 
+def setDateTimeLimits(data, values=None, day=None, isDf=True):
+    """Función que devuelve un conjunto de datos con los límites de tiempo establecidos."""
+
+    initDate = pd.to_datetime(day + " 07:00:00")
+    endDate = pd.to_datetime(day + " 21:55:00")
+
+    if isDf:
+        data.reset_index(inplace=True)
+        initValues = [initDate] + values
+        endValues = [endDate] + values
+        dfInit = pd.DataFrame([initValues], columns=data.columns)
+        dfEnd = pd.DataFrame([endValues], columns=data.columns)
+        if initDate not in data["Timestamp"].unique():
+            data = pd.concat([dfInit, data])
+
+        if endDate not in data["Timestamp"].unique():
+            data = pd.concat([data, dfEnd])
+
+    else:
+        if values is None:
+            dfInit = pd.Series(initDate, name="Timestamp")
+            dfEnd = pd.Series(endDate, name="Timestamp")
+            if initDate not in data.values:
+                data = pd.concat([dfInit, data])
+
+            if endDate not in data.values:
+                data = pd.concat([data, dfEnd])
+        else:
+            dfInit = pd.Series(values, index=[initDate], name="Timestamp")
+            dfEnd = pd.Series(values, index=[endDate], name="Timestamp")
+            if initDate not in data:
+                data = pd.concat([dfInit, data])
+
+            if endDate not in data:
+                data = pd.concat([data, dfEnd])
+
+
+    return data
+
+
 def readDataFromDirectory(dataPath, personCountPath, statePath):
     """Función que lee los archivos de datos de los receptores Bluetooth y del contador de personas y los concentra en un array"""
 
@@ -25,8 +65,14 @@ def readDataFromDirectory(dataPath, personCountPath, statePath):
         personCount.insert(0, "Timestamp", personCount.Fecha.str.cat(personCount.Hora, sep=" "))
         personCount.drop(columns=["Fecha", "Hora"], inplace=True)
         personCount["Timestamp"] = pd.to_datetime(personCount["Timestamp"])
+        personCount = personCount.groupby(pd.Grouper(key="Timestamp", freq="5T")).last()
+        day = personCount.index.date[0].strftime(format="%Y-%m-%d")
+
+        personCount = setDateTimeLimits(personCount, [np.nan, 0], day)
+
         personCount.set_index("Timestamp", inplace=True)
         personCount = personCount.resample("5T").last()
+        personCount["Estado"].fillna(0, inplace=True)
         personCount.loc[personCount["Estado"] == 0, "Ocupacion"] = np.nan
         personCountArray.append(personCount)
 
@@ -85,8 +131,6 @@ def getTotalDevicesByRaspberry(data, state):
     finalDataList = []
 
     day = dataInterval1.index.get_level_values(0).date[0].strftime(format="%Y-%m-%d")
-    initDate = pd.to_datetime(day + " 07:00:00")
-    endDate = pd.to_datetime(day + " 21:55:00")
 
     for i in range(len(dataList)):
         try:
@@ -94,15 +138,7 @@ def getTotalDevicesByRaspberry(data, state):
         except (Exception,):
             pass
 
-        dataList[i].reset_index(inplace=True)
-
-        if initDate not in dataList[i]["Timestamp"].unique():
-            dataList[i] = pd.concat(
-                [pd.DataFrame([[initDate, np.nan]], columns=["Timestamp", "MAC"]), dataList[i]])
-
-        if endDate not in dataList[i]["Timestamp"].unique():
-            dataList[i] = pd.concat(
-                [dataList[i], pd.DataFrame([[endDate, np.nan]], columns=["Timestamp", "MAC"])])
+        dataList[i] = setDateTimeLimits(dataList[i], [np.nan], day)
 
         dataList[i].set_index("Timestamp", inplace=True)
         finalDataList.append(dataList[i].resample("5T").asfreq())
@@ -160,18 +196,11 @@ def getTotalDevicesByPairRaspberries(data, state):
 
     group = nDevicesIntervalDataRABCDEMerge.groupby(["Timestamp", "MAC"]).nunique()
 
-    group_CDE = group.loc[(group["Raspberry"] == 0) & (group["Raspberry_b"] == 0) & (group["Raspberry_c"] == 1) & (
-            group["Raspberry_d"] == 1) & (group["Raspberry_e"] == 1)]
-    group_CE = group.loc[(group["Raspberry"] == 0) & (group["Raspberry_b"] == 0) & (group["Raspberry_c"] == 1) & (
-            group["Raspberry_d"] == 0) & (group["Raspberry_e"] == 1)]
-    group_DE = group.loc[(group["Raspberry"] == 0) & (group["Raspberry_b"] == 0) & (group["Raspberry_c"] == 0) & (
-            group["Raspberry_d"] == 1) & (group["Raspberry_e"] == 1)]
-    group_BE = group.loc[(group["Raspberry"] == 0) & (group["Raspberry_b"] == 1) & (group["Raspberry_c"] == 0) & (
-            group["Raspberry_d"] == 0) & (group["Raspberry_e"] == 1)]
-
+    group_CDE = group.loc[(group["Raspberry_c"] == 1) & (group["Raspberry_d"] == 1) & (group["Raspberry_e"] == 1)]
+    group_CE = group.loc[(group["Raspberry_c"] == 1) & (group["Raspberry_e"] == 1)]
+    group_DE = group.loc[(group["Raspberry_d"] == 1) & (group["Raspberry_e"] == 1)]
+    group_BE = group.loc[(group["Raspberry_b"] == 1) & (group["Raspberry_e"] == 1)]
     day = group_CDE.index.get_level_values(0).date[0].strftime(format="%Y-%m-%d")
-    initDate = pd.to_datetime(day + " 07:00:00")
-    endDate = pd.to_datetime(day + " 21:55:00")
 
     dataList = [group_CDE, group_CE, group_DE, group_BE]
     finalDataList = []
@@ -179,12 +208,7 @@ def getTotalDevicesByPairRaspberries(data, state):
     for column in dataList:
         column.reset_index(inplace=True)
         column = column["Timestamp"].value_counts(sort=False)
-
-        if initDate not in column:
-            column = pd.concat([pd.Series(np.nan, index=[initDate], name="Timestamp"), column])
-
-        if endDate not in column:
-            column = pd.concat([column, pd.Series(np.nan, index=[endDate], name="Timestamp")])
+        column = setDateTimeLimits(column, np.nan, day, False)
 
         finalDataList.append(column.resample("5T").asfreq().values)
 
@@ -242,8 +266,6 @@ def getTotalDeviceByMessageNumber(data, state):
     totalMACRE_30 = dataInterval5.loc[dataInterval5["Nº Mensajes"] > 30]
 
     day = dataInterval1.index.get_level_values(0).date[0].strftime(format="%Y-%m-%d")
-    initDate = pd.to_datetime(day + " 07:00:00")
-    endDate = pd.to_datetime(day + " 21:55:00")
 
     dataList = [totalMACRA_10, totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30,
                 totalMACRC_10,
@@ -255,11 +277,7 @@ def getTotalDeviceByMessageNumber(data, state):
         column.reset_index(inplace=True)
         column = column["Timestamp"].value_counts(sort=False)
 
-        if initDate not in column:
-            column = pd.concat([pd.Series(np.nan, index=[initDate], name="Timestamp"), column])
-
-        if endDate not in column:
-            column = pd.concat([column, pd.Series(np.nan, index=[endDate], name="Timestamp")])
+        column = setDateTimeLimits(column, np.nan, day, False)
 
         finalDataList.append(column.resample("5T").asfreq().values)
 
@@ -418,6 +436,8 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
         personCount = personCountArray[i]
         state = stateArray[i]
 
+        day = data["Timestamp"][0].date().strftime('%Y-%m-%d')
+
         RADownInterval = state.loc[state["RA(1/0)"] == 0].index
         RBDownInterval = state.loc[state["RB(1/0)"] == 0].index
         RCDownInterval = state.loc[state["RC(1/0)"] == 0].index
@@ -426,6 +446,9 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
         RDownInterval = (RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval)
 
         dataGroup = data.groupby("Timestamp").nunique()
+        dataGroup = setDateTimeLimits(dataGroup, [np.nan, np.nan, np.nan], day)
+        dataGroup.set_index("Timestamp", inplace=True)
+        dataGroup = dataGroup.resample("5T").asfreq()
         totalMAC = dataGroup["MAC"].values
 
         totalMACRA, totalMACRB, totalMACRC, totalMACRD, totalMACRE = getTotalDevicesByRaspberry(data, RDownInterval)
@@ -441,8 +464,10 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
         totalMACTwoPreviousInterval = getTotalDevicesInTwoPreviousIntervals(data, RDownInterval)
 
         timestamp = data["Timestamp"].dt.strftime('%Y-%m-%d %H:%M:%S').unique()
+        timestamp = pd.Series(timestamp, name="Timestamp")
+        timestamp = setDateTimeLimits(timestamp, None, day, False)
 
-        trainingData = np.array(np.transpose([timestamp, personCount["Ocupacion"], minutes, totalMAC,
+        trainingData = np.array(np.transpose([timestamp, personCount["Ocupacion"].values, minutes, totalMAC,
                                               totalMACRA,
                                               totalMACRB,
                                               totalMACRC, totalMACRD, totalMACRE, totalMACRDE, totalMACRCE,
@@ -456,6 +481,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
                                               totalMACTwoPreviousInterval]))
 
         trainingSet = pd.DataFrame(trainingData, columns=columns)
+
         trainingDataSet = pd.concat([trainingDataSet, trainingSet], ignore_index=True)
 
         savePlotColumns(trainingSet, "../figures/", "../figuresDate/")
