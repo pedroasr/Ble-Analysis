@@ -2,6 +2,10 @@ import numpy as np
 import pandas as pd
 import pathlib
 from matplotlib import pyplot as plt
+import warnings
+
+warnings.filterwarnings("ignore")
+pd.options.mode.chained_assignment = None
 
 
 def setDateTimeLimits(data, values, day, isDf=True):
@@ -550,3 +554,8 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
     filledDataSet.to_csv("../docs/filled-training-set.csv", sep=";", na_rep="NaN", index=False)
 
     return trainingDataSet, filterDataSet, filledDataSet
+
+
+dataArray, personCountArray, stateArray = readDataFromDirectory("../docs/data", "../docs/personcount", "../docs/state")
+
+trainingDataset, filterDataSet, filledDataset = getTrainingDataset(dataArray, personCountArray, stateArray)
