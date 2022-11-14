@@ -62,7 +62,7 @@ def readDataFromDirectory(dataPath, personCountPath, statePath):
         personCount = personCount.groupby(pd.Grouper(key="Timestamp", freq="5T")).last()
         day = personCount.index.date[0].strftime(format="%Y-%m-%d")
 
-        personCount = setDateTimeLimits(personCount, [np.nan, 0], day)
+        personCount = setDateTimeLimits(personCount, [0, 1], day)
 
         personCount.set_index("Timestamp", inplace=True)
         personCount = personCount.resample("5T").last()
@@ -85,11 +85,12 @@ def readDataFromDirectory(dataPath, personCountPath, statePath):
 def parseDataByRaspberry(data):
     """Función que devuelve un conjunto de datos filtrado por cada Raspberry. Devuelve un conjunto por Raspberry."""
 
-    dataInterval1 = data.loc[data['Raspberry'] == 'Raspberry A']
-    dataInterval2 = data.loc[data['Raspberry'] == 'Raspberry B']
-    dataInterval3 = data.loc[data['Raspberry'] == 'Raspberry C']
-    dataInterval4 = data.loc[data['Raspberry'] == 'Raspberry D']
-    dataInterval5 = data.loc[data['Raspberry'] == 'Raspberry E']
+    dataCopy = data.copy()
+    dataInterval1 = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry A']
+    dataInterval2 = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry B']
+    dataInterval3 = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry C']
+    dataInterval4 = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry D']
+    dataInterval5 = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry E']
 
     return dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5
 
@@ -121,24 +122,24 @@ def getTotalDevicesByRaspberry(data, state):
     dataInterval4.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
     dataInterval5.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
 
-    dataList = [dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5]
+    dataArray = [dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5]
     statusList = [RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval]
     finalDataList = []
 
     day = data["Timestamp"].dt.date[0].strftime(format="%Y-%m-%d")
 
-    for i in range(len(dataList)):
-        dataList[i] = setDateTimeLimits(dataList[i], [0], day)
-
-        dataList[i].set_index("Timestamp", inplace=True)
-        dataList[i] = dataList[i].resample("5T").asfreq().fillna(0)
+    for i in range(len(dataArray)):
+        column = dataArray[i]
+        column = setDateTimeLimits(column, [0], day)
+        column.set_index("Timestamp", inplace=True)
+        column = column.resample("5T").asfreq().fillna(0)
 
         try:
-            dataList[i].loc[statusList[i], "MAC"] = np.nan
+            column.loc[statusList[i], "MAC"] = np.nan
         except (Exception,):
             pass
 
-        finalDataList.append(dataList[i])
+        finalDataList.append(column)
 
     totalMACRA, totalMACRB, totalMACRC, totalMACRD, totalMACRE = finalDataList
 
@@ -190,40 +191,43 @@ def getTotalDevicesByPairRaspberries(data, state):
 
     day = group.index.get_level_values(0).date[0].strftime(format="%Y-%m-%d")
 
-    dataList = [group_CDE, group_CE, group_DE, group_BE]
+    dataArray = [group_CDE, group_CE, group_DE, group_BE]
     finalDataList = []
 
-    for column in dataList:
+    for i in range(len(dataArray)):
+        column = dataArray[i]
         column.reset_index(inplace=True)
         column = column["Timestamp"].value_counts(sort=False)
         column = setDateTimeLimits(column, 0, day, False)
         column = column.resample("5T").asfreq().fillna(0)
+
+        if i == 0:
+            try:
+                column.loc[RCDownInterval] = np.nan
+                column.loc[RDDownInterval] = np.nan
+                column.loc[REDownInterval] = np.nan
+            except (Exception,):
+                pass
+        elif i == 1:
+            try:
+                column.loc[RCDownInterval] = np.nan
+                column.loc[REDownInterval] = np.nan
+            except (Exception,):
+                pass
+        elif i == 2:
+            try:
+                column.loc[RDDownInterval] = np.nan
+                column.loc[REDownInterval] = np.nan
+            except (Exception,):
+                pass
+        else:
+            try:
+                column.loc[RBDownInterval] = np.nan
+                column.loc[REDownInterval] = np.nan
+            except (Exception,):
+                pass
+
         finalDataList.append(column)
-
-    try:
-        finalDataList[0].loc[RCDownInterval] = np.nan
-        finalDataList[0].loc[RDDownInterval] = np.nan
-        finalDataList[0].loc[REDownInterval] = np.nan
-    except (Exception,):
-        pass
-
-    try:
-        finalDataList[1].loc[RCDownInterval] = np.nan
-        finalDataList[1].loc[REDownInterval] = np.nan
-    except (Exception,):
-        pass
-
-    try:
-        finalDataList[2].loc[RDDownInterval] = np.nan
-        finalDataList[2].loc[REDownInterval] = np.nan
-    except (Exception,):
-        pass
-
-    try:
-        finalDataList[3].loc[RBDownInterval] = np.nan
-        finalDataList[3].loc[REDownInterval] = np.nan
-    except (Exception,):
-        pass
 
     totalMACRCDE, totalMACRCE, totalMACRDE, totalMACRBE = finalDataList
 
@@ -271,44 +275,46 @@ def getTotalDeviceByMessageNumber(data, state):
 
     day = data["Timestamp"].dt.date[0].strftime(format="%Y-%m-%d")
 
-    dataList = [totalMACRA_10, totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30,
-                totalMACRC_10,
-                totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10,
-                totalMACRE_1030, totalMACRE_30]
+    dataArray = [totalMACRA_10, totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30,
+                 totalMACRC_10,
+                 totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10,
+                 totalMACRE_1030, totalMACRE_30]
     finalDataList = []
 
-    for i in range(len(dataList)):
-        dataList[i].reset_index(inplace=True)
-        dataList[i] = dataList[i]["Timestamp"].value_counts(sort=False)
-        dataList[i] = setDateTimeLimits(dataList[i], 0, day, False)
-        dataList[i] = dataList[i].resample("5T").asfreq().fillna(0)
+    for i in range(len(dataArray)):
+        column = dataArray[i]
+        column.reset_index(inplace=True)
+        column = column["Timestamp"].value_counts(sort=False)
+        column = setDateTimeLimits(column, 0, day, False)
+        column = column.resample("5T").asfreq().fillna(0)
+
         if i < 3:
             try:
-                dataList[i].loc[RADownInterval] = np.nan
+                column.loc[RADownInterval] = np.nan
             except (Exception,):
                 pass
         elif i < 6:
             try:
-                dataList[i].loc[RBDownInterval] = np.nan
+                column.loc[RBDownInterval] = np.nan
             except (Exception,):
                 pass
         elif i < 9:
             try:
-                dataList[i].loc[RCDownInterval] = np.nan
+                column.loc[RCDownInterval] = np.nan
             except (Exception,):
                 pass
         elif i < 12:
             try:
-                dataList[i].loc[RDDownInterval] = np.nan
+                column.loc[RDDownInterval] = np.nan
             except (Exception,):
                 pass
         else:
             try:
-                dataList[i].loc[REDownInterval] = np.nan
+                column.loc[REDownInterval] = np.nan
             except (Exception,):
                 pass
 
-        finalDataList.append(dataList[i].values)
+        finalDataList.append(column.values)
 
     totalMACRA_10, totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30, totalMACRC_10, \
     totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10, \
@@ -402,11 +408,11 @@ def savePlotColumns(data, path, path2):
     """Función que guarda en una carpeta las gráficas para cada una de las columnas del training set."""
 
     data["Timestamp"] = pd.to_datetime(data["Timestamp"])
-    date = data["Timestamp"][0].date().strftime('%Y-%m-%d')
+    day = data["Timestamp"].iloc[0].date().strftime('%Y-%m-%d')
 
     for i in range(3, len(data.columns)):
-        name = data.columns[i] + "_" + date
-        nameDate = date + "_" + data.columns[i]
+        name = data.columns[i] + "_" + day
+        nameDate = day + "_" + data.columns[i]
 
         plt.figure(figsize=(10, 6))
         plt.plot(data["Timestamp"], data["Ocupacion"], label="Ocupacion", color="red")
@@ -427,31 +433,6 @@ def fillTrainingSet(data):
     imposibles de interpolar"""
 
     dataCopy = data.copy()
-
-    """
-    dataCopy["Is NaN"] = pd.isna(dataCopy["N MAC RA"])
-    dataCopy["crossing"] = (dataCopy["Is NaN"] != dataCopy["Is NaN"].shift()).cumsum()
-    dataCopy["count"] = dataCopy.groupby(["Is NaN", "crossing"]).cumcount(ascending=False)
-    dataCopy.loc[dataCopy["Is NaN"] == False, "count"] = 0
-    dataCopy.drop(["crossing", "Is NaN"], axis=1, inplace=True)
-
-    go = True
-    while go:
-        maxNaN = dataCopy["count"].max()
-        if maxNaN > 5:
-            index = dataCopy["count"].idxmax()
-            dataCopy.drop(range(index, index + maxNaN + 1), axis=0, inplace=True)
-        else:
-            go = False
-            dataCopy.drop(["count"], axis=1, inplace=True)
-
-    
-
-    trainingSetFill = dataCopy.resample("5T").mean().interpolate()
-    trainingSetFill = trainingSetFill.loc[dataCopy.index]
-    filledSet = []
-    """
-
     dataCopy.set_index("Timestamp", inplace=True)
     filledSet = dataCopy.resample("5T").mean().interpolate()
     filledSet.reset_index(inplace=True)
@@ -539,6 +520,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
 
         trainingDataSet = pd.concat([trainingDataSet, trainingSet], ignore_index=True)
 
+        print("Guardando gráficas de los datos calculados de la fecha " + day + "...")
         savePlotColumns(trainingSet, "../figures/", "../figuresDate/")
 
         filterSet = trainingSet[columnsFilter]
@@ -547,7 +529,9 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
         filledSet = fillTrainingSet(filterSet)
         filledDataSet = pd.concat([filledDataSet, filledSet], ignore_index=True)
 
+        print("Guardando gráficas de los datos limpios de la fecha " + day + "...")
         savePlotColumns(filledSet, "../figuresFilled/", "../figuresDateFilled/")
+
 
     trainingDataSet.to_csv("../docs/training-set.csv", sep=";", na_rep="NaN", index=False)
     filterDataSet.to_csv("../docs/filter-training-set.csv", sep=";", na_rep="NaN", index=False)
@@ -556,6 +540,6 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
     return trainingDataSet, filterDataSet, filledDataSet
 
 
-dataArray, personCountArray, stateArray = readDataFromDirectory("../docs/data", "../docs/personcount", "../docs/state")
+dataList, personCountList, stateList = readDataFromDirectory("../docs/data", "../docs/personcount", "../docs/state")
 
-trainingDataset, filterDataSet, filledDataset = getTrainingDataset(dataArray, personCountArray, stateArray)
+getTrainingDataset(dataList, personCountList, stateList)
