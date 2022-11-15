@@ -338,7 +338,7 @@ def getTotalDevicesInPreviousInterval(data, state):
     dataCopy[(dataCopy["Timestamp"].isin(RDDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry D"]))] = np.nan
     dataCopy[(dataCopy["Timestamp"].isin(REDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry E"]))] = np.nan
 
-    day = dataCopy["Timestamp"][0].date().strftime('%Y-%m-%d')
+    day = dataCopy["Timestamp"].iloc[0].date().strftime('%Y-%m-%d')
     dataCopy.set_index("Timestamp", inplace=True)
     dataCopy.dropna(inplace=True)
     dataCopy.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
@@ -377,7 +377,7 @@ def getTotalDevicesInTwoPreviousIntervals(data, state):
     dataCopy[(dataCopy["Timestamp"].isin(RDDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry D"]))] = np.nan
     dataCopy[(dataCopy["Timestamp"].isin(REDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry E"]))] = np.nan
 
-    day = dataCopy["Timestamp"][0].date().strftime('%Y-%m-%d')
+    day = dataCopy["Timestamp"].iloc[0].date().strftime('%Y-%m-%d')
     dataCopy.set_index("Timestamp", inplace=True)
     dataCopy.dropna(inplace=True)
     dataCopy.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
@@ -437,7 +437,7 @@ def fillTrainingSet(data):
     filledSet = dataCopy.resample("5T").mean().interpolate()
     filledSet.reset_index(inplace=True)
     filledSet = filledSet.round(3)
-    filledSet.dropna(inplace=True)
+    filledSet = filledSet[filledSet["Ocupacion"].notna()]
     return filledSet
 
 
