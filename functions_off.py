@@ -134,10 +134,7 @@ def getTotalDevicesByRaspberry(data, state):
         column.set_index("Timestamp", inplace=True)
         column = column.resample("5T").asfreq().fillna(0)
 
-        try:
-            column.loc[statusList[i], "MAC"] = np.nan
-        except (Exception,):
-            pass
+        column.loc[statusList[i], "MAC"] = np.nan
 
         finalDataList.append(column)
 
@@ -202,30 +199,18 @@ def getTotalDevicesByPairRaspberries(data, state):
         column = column.resample("5T").asfreq().fillna(0)
 
         if i == 0:
-            try:
-                column.loc[RCDownInterval] = np.nan
-                column.loc[RDDownInterval] = np.nan
-                column.loc[REDownInterval] = np.nan
-            except (Exception,):
-                pass
+            column.loc[RCDownInterval] = np.nan
+            column.loc[RDDownInterval] = np.nan
+            column.loc[REDownInterval] = np.nan
         elif i == 1:
-            try:
-                column.loc[RCDownInterval] = np.nan
-                column.loc[REDownInterval] = np.nan
-            except (Exception,):
-                pass
+            column.loc[RCDownInterval] = np.nan
+            column.loc[REDownInterval] = np.nan
         elif i == 2:
-            try:
-                column.loc[RDDownInterval] = np.nan
-                column.loc[REDownInterval] = np.nan
-            except (Exception,):
-                pass
+            column.loc[RDDownInterval] = np.nan
+            column.loc[REDownInterval] = np.nan
         else:
-            try:
-                column.loc[RBDownInterval] = np.nan
-                column.loc[REDownInterval] = np.nan
-            except (Exception,):
-                pass
+            column.loc[RBDownInterval] = np.nan
+            column.loc[REDownInterval] = np.nan
 
         finalDataList.append(column)
 
@@ -289,30 +274,15 @@ def getTotalDeviceByMessageNumber(data, state):
         column = column.resample("5T").asfreq().fillna(0)
 
         if i < 3:
-            try:
-                column.loc[RADownInterval] = np.nan
-            except (Exception,):
-                pass
+            column.loc[RADownInterval] = np.nan
         elif i < 6:
-            try:
-                column.loc[RBDownInterval] = np.nan
-            except (Exception,):
-                pass
+            column.loc[RBDownInterval] = np.nan
         elif i < 9:
-            try:
-                column.loc[RCDownInterval] = np.nan
-            except (Exception,):
-                pass
+            column.loc[RCDownInterval] = np.nan
         elif i < 12:
-            try:
-                column.loc[RDDownInterval] = np.nan
-            except (Exception,):
-                pass
+            column.loc[RDDownInterval] = np.nan
         else:
-            try:
-                column.loc[REDownInterval] = np.nan
-            except (Exception,):
-                pass
+            column.loc[REDownInterval] = np.nan
 
         finalDataList.append(column.values)
 
@@ -531,7 +501,6 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
 
         print("Guardando gráficas de los datos limpios de la fecha " + day + "...")
         savePlotColumns(filledSet, "../figuresFilled/", "../figuresDateFilled/")
-
 
     trainingDataSet.to_csv("../docs/training-set.csv", sep=";", na_rep="NaN", index=False)
     filterDataSet.to_csv("../docs/filter-training-set.csv", sep=";", na_rep="NaN", index=False)
