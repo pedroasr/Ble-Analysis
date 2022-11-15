@@ -65,19 +65,22 @@ def getTotalDevicesByPairRaspberries(data):
                                                                            on=("Timestamp", "MAC"), copy=False)
 
     group = nDevicesIntervalDataRABCDEMerge.groupby(["Timestamp", "MAC"]).nunique()
-    total_CE, total_DE, total_CDE, total_BE = 0, 0, 0, 0
 
-    for j in range(len(group)):
-        if group["Raspberry_c"][j] == 1 and group["Raspberry_d"][j] == 1 and group["Raspberry_e"][j] == 1:
-            total_CDE = total_CDE + 1
-        elif group["Raspberry_c"][j] == 1 and group["Raspberry_e"][j] == 1:
-            total_CE = total_CE + 1
-        elif group["Raspberry_d"][j] == 1 and group["Raspberry_e"][j] == 1:
-            total_DE = total_DE + 1
-        elif group["Raspberry_b"][j] == 1 and group["Raspberry_e"][j] == 1:
-            total_BE = total_BE + 1
+    group_CDE = group.loc[(group["Raspberry_c"] == 1) & (group["Raspberry_d"] == 1) & (group["Raspberry_e"] == 1)]
+    group_CE = group.loc[(group["Raspberry_c"] == 1) & (group["Raspberry_e"] == 1)]
+    group_DE = group.loc[(group["Raspberry_d"] == 1) & (group["Raspberry_e"] == 1)]
+    group_BE = group.loc[(group["Raspberry_b"] == 1) & (group["Raspberry_e"] == 1)]
 
-    totalMACRDE, totalMACRCE, totalMACRCDE, totalMACRBE = total_DE, total_CE, total_CDE, total_BE
+    dataArray = [group_CDE, group_CE, group_DE, group_BE]
+    finalDataList = []
+
+    for i in range(len(dataArray)):
+        column = dataArray[i]
+        column.reset_index(inplace=True)
+        total = len(column)
+        finalDataList.append(total)
+
+    totalMACRDE, totalMACRCE, totalMACRCDE, totalMACRBE = finalDataList
 
     return totalMACRDE, totalMACRCE, totalMACRCDE, totalMACRBE
 
@@ -128,14 +131,14 @@ def getTotalDevicesInPreviousInterval(data, timeSeries):
     else:
         group = data.loc[data["Timestamp"] == timeSeries[-1]]
         groupToCheck = data.loc[data["Timestamp"] == timeSeries[-2]]
+
         group.reset_index(inplace=True)
         groupToCheck.reset_index(inplace=True)
-        count = 0
-        uniqueMAC = group["MAC"].unique()
-        for mac in uniqueMAC:
-            if len(groupToCheck.loc[groupToCheck["MAC"] == mac]) != 0:
-                count = count + 1
-        totalMACPreviousInterval = count
+
+        group = group["MAC"].unique()
+        groupToCheck = groupToCheck["MAC"].unique()
+
+        totalMACPreviousInterval = len(set(group) & set(groupToCheck))
 
     return totalMACPreviousInterval
 
@@ -150,16 +153,16 @@ def getTotalDevicesInTwoPreviousIntervals(data, timeSeries):
         group = data.loc[data["Timestamp"] == timeSeries[-1]]
         groupToCheck = data.loc[data["Timestamp"] == timeSeries[-2]]
         groupToCheckPrevious = data.loc[data["Timestamp"] == timeSeries[-3]]
+
         group.reset_index(inplace=True)
         groupToCheck.reset_index(inplace=True)
         groupToCheckPrevious.reset_index(inplace=True)
-        uniqueMAC = group["MAC"].unique()
-        count = 0
-        for mac in uniqueMAC:
-            if len(groupToCheck.loc[groupToCheck["MAC"] == mac]) != 0 and \
-               len(groupToCheckPrevious.loc[groupToCheckPrevious["MAC"] == mac]) != 0:
-                count = count + 1
-        totalMACTwoPreviousInterval = count
+
+        group = group["MAC"].unique()
+        groupToCheck = groupToCheck["MAC"].unique()
+        groupToCheckPrevious = groupToCheckPrevious["MAC"].unique()
+
+        totalMACTwoPreviousInterval = len(set(group) & set(groupToCheck) & set(groupToCheckPrevious))
 
     return totalMACTwoPreviousInterval
 
