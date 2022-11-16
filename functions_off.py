@@ -58,14 +58,15 @@ def readDataFromDirectory(dataPath, personCountPath, statePath):
         personCount = pd.read_csv(file, sep=';', usecols=["Fecha", "Hora", "Ocupacion", "Estado"])
         personCount.insert(0, "Timestamp", personCount.Fecha.str.cat(personCount.Hora, sep=" "))
         personCount.drop(columns=["Fecha", "Hora"], inplace=True)
-        personCount["Timestamp"] = pd.to_datetime(personCount["Timestamp"])
+        personCount["Timestamp"] = pd.to_datetime(personCount["Timestamp"], dayfirst=True)
+
         personCount = personCount.groupby(pd.Grouper(key="Timestamp", freq="5T")).last()
         day = personCount.index.date[0].strftime(format="%Y-%m-%d")
-
         personCount = setDateTimeLimits(personCount, [0, 1], day)
 
         personCount.set_index("Timestamp", inplace=True)
-        personCount = personCount.resample("5T").last()
+        personCount = personCount.resample("5T").asfreq().interpolate()
+        personCount = personCount.round()
         personCount["Estado"].fillna(1, inplace=True)
         personCount["Ocupacion"].fillna(0, inplace=True)
         personCount.loc[personCount["Estado"] == 0, "Ocupacion"] = np.nan
@@ -75,7 +76,7 @@ def readDataFromDirectory(dataPath, personCountPath, statePath):
         state = pd.read_csv(file, sep=';')
         state.insert(0, "Timestamp", state.Fecha.str.cat(state.Hora, sep=" "))
         state.drop(columns=["Fecha", "Hora", "Indice intervalo"], inplace=True)
-        state["Timestamp"] = pd.to_datetime(state["Timestamp"])
+        state["Timestamp"] = pd.to_datetime(state["Timestamp"], dayfirst=True)
         state.set_index("Timestamp", inplace=True)
         stateArray.append(state)
 
@@ -133,7 +134,6 @@ def getTotalDevicesByRaspberry(data, state):
         column = setDateTimeLimits(column, [0], day)
         column.set_index("Timestamp", inplace=True)
         column = column.resample("5T").asfreq().fillna(0)
-
         column.loc[statusList[i], "MAC"] = np.nan
 
         finalDataList.append(column)
