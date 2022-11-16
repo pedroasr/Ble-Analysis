@@ -17,6 +17,7 @@ def parseDataByRaspberryTime(data):
     """Función que devuelve conjuntos de datos con valores únicos filtrados por Raspberry y agrupados por Timestamp."""
 
     dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5 = parseDataByRaspberry(data)
+
     dataInterval1 = dataInterval1.groupby('Timestamp').nunique()
     dataInterval2 = dataInterval2.groupby('Timestamp').nunique()
     dataInterval3 = dataInterval3.groupby('Timestamp').nunique()
