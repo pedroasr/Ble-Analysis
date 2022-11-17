@@ -87,43 +87,43 @@ def parseDataByRaspberry(data):
     """Función que devuelve un conjunto de datos filtrado por cada Raspberry. Devuelve un conjunto por Raspberry."""
 
     dataCopy = data.copy()
-    dataInterval1 = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry A']
-    dataInterval2 = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry B']
-    dataInterval3 = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry C']
-    dataInterval4 = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry D']
-    dataInterval5 = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry E']
+    dataRA = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry A']
+    dataRB = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry B']
+    dataRC = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry C']
+    dataRD = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry D']
+    dataRE = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry E']
 
-    return dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5
+    return dataRA, dataRB, dataRC, dataRD, dataRE
 
 
-def parseDataByRaspberryTime(data):
+def groupDataByRaspberryTime(data):
     """Función que devuelve conjuntos de datos con valores únicos filtrados por Raspberry y agrupados por Timestamp."""
 
-    dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5 = parseDataByRaspberry(data)
+    dataRA, dataRB, dataRC, dataRD, dataRE = parseDataByRaspberry(data)
 
-    dataInterval1 = dataInterval1.groupby('Timestamp').nunique()
-    dataInterval2 = dataInterval2.groupby('Timestamp').nunique()
-    dataInterval3 = dataInterval3.groupby('Timestamp').nunique()
-    dataInterval4 = dataInterval4.groupby('Timestamp').nunique()
-    dataInterval5 = dataInterval5.groupby('Timestamp').nunique()
+    dataRA = dataRA.groupby('Timestamp').nunique()
+    dataRB = dataRB.groupby('Timestamp').nunique()
+    dataRC = dataRC.groupby('Timestamp').nunique()
+    dataRD = dataRD.groupby('Timestamp').nunique()
+    dataRE = dataRE.groupby('Timestamp').nunique()
 
-    return dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5
+    return dataRA, dataRB, dataRC, dataRD, dataRE
 
 
 def getTotalDevicesByRaspberry(data, state):
     """Función que devuelve conjuntos de datos con el número de dispositivos únicos filtrados por Raspberry y agrupados
     por Timestamp."""
 
-    dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5 = parseDataByRaspberryTime(data)
+    dataRA, dataRB, dataRC, dataRD, dataRE = groupDataByRaspberryTime(data)
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
-    dataInterval1.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
-    dataInterval2.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
-    dataInterval3.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
-    dataInterval4.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
-    dataInterval5.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
+    dataRA.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
+    dataRB.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
+    dataRC.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
+    dataRD.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
+    dataRE.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
 
-    dataArray = [dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5]
+    dataArray = [dataRA, dataRB, dataRC, dataRD, dataRE]
     statusList = [RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval]
     finalDataList = []
 
@@ -153,20 +153,20 @@ def getTotalDevicesByPairRaspberries(data, state):
     """Función que devuelve cuatro listas compuestas por los dispositivos captados en el mismo intervalo de tiempo por
     las parejas C-E, D-E, B-E y el trío C-D-E"""
 
-    dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5 = parseDataByRaspberry(data)
+    dataRA, dataRB, dataRC, dataRD, dataRE = parseDataByRaspberry(data)
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
-    dataInterval1.drop(columns="Nº Mensajes", inplace=True)
-    dataInterval2.drop(columns="Nº Mensajes", inplace=True)
-    dataInterval3.drop(columns="Nº Mensajes", inplace=True)
-    dataInterval4.drop(columns="Nº Mensajes", inplace=True)
-    dataInterval5.drop(columns="Nº Mensajes", inplace=True)
+    dataRA.drop(columns="Nº Mensajes", inplace=True)
+    dataRB.drop(columns="Nº Mensajes", inplace=True)
+    dataRC.drop(columns="Nº Mensajes", inplace=True)
+    dataRD.drop(columns="Nº Mensajes", inplace=True)
+    dataRE.drop(columns="Nº Mensajes", inplace=True)
 
-    nDevicesIntervalDataRAMerge = dataInterval1.set_index("Timestamp")
-    nDevicesIntervalDataRBMerge = dataInterval2.set_index("Timestamp")
-    nDevicesIntervalDataRCMerge = dataInterval3.set_index("Timestamp")
-    nDevicesIntervalDataRDMerge = dataInterval4.set_index("Timestamp")
-    nDevicesIntervalDataREMerge = dataInterval5.set_index("Timestamp")
+    nDevicesIntervalDataRAMerge = dataRA.set_index("Timestamp")
+    nDevicesIntervalDataRBMerge = dataRB.set_index("Timestamp")
+    nDevicesIntervalDataRCMerge = dataRC.set_index("Timestamp")
+    nDevicesIntervalDataRDMerge = dataRD.set_index("Timestamp")
+    nDevicesIntervalDataREMerge = dataRE.set_index("Timestamp")
 
     nDevicesIntervalDataRDEMerge = nDevicesIntervalDataRDMerge.merge(nDevicesIntervalDataREMerge, how='outer',
                                                                      on=("Timestamp", "MAC"), copy=False,
@@ -223,40 +223,34 @@ def getTotalDeviceByMessageNumber(data, state):
     """Función que devuelve tres listas por Raspberry, una por intervalo de número de mensajes por debajo
     de 10, entre 10 y 30 y superior a 30."""
 
-    dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5 = parseDataByRaspberry(data)
+    dataRA, dataRB, dataRC, dataRD, dataRE = parseDataByRaspberry(data)
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
-    dataInterval1 = dataInterval1.set_index("Timestamp")
-    dataInterval2 = dataInterval2.set_index("Timestamp")
-    dataInterval3 = dataInterval3.set_index("Timestamp")
-    dataInterval4 = dataInterval4.set_index("Timestamp")
-    dataInterval5 = dataInterval5.set_index("Timestamp")
+    dataRA = dataRA.groupby(["Timestamp", "MAC"]).sum()
+    dataRB = dataRB.groupby(["Timestamp", "MAC"]).sum()
+    dataRC = dataRC.groupby(["Timestamp", "MAC"]).sum()
+    dataRD = dataRD.groupby(["Timestamp", "MAC"]).sum()
+    dataRE = dataRE.groupby(["Timestamp", "MAC"]).sum()
 
-    dataInterval1 = dataInterval1.groupby(["Timestamp", "MAC"]).sum()
-    dataInterval2 = dataInterval2.groupby(["Timestamp", "MAC"]).sum()
-    dataInterval3 = dataInterval3.groupby(["Timestamp", "MAC"]).sum()
-    dataInterval4 = dataInterval4.groupby(["Timestamp", "MAC"]).sum()
-    dataInterval5 = dataInterval5.groupby(["Timestamp", "MAC"]).sum()
+    totalMACRA_10 = dataRA.loc[dataRA["Nº Mensajes"] <= 10]
+    totalMACRA_1030 = dataRA.loc[(dataRA["Nº Mensajes"] > 10) & (dataRA["Nº Mensajes"] <= 30)]
+    totalMACRA_30 = dataRA.loc[dataRA["Nº Mensajes"] > 30]
 
-    totalMACRA_10 = dataInterval1.loc[dataInterval1["Nº Mensajes"] <= 10]
-    totalMACRA_1030 = dataInterval1.loc[(dataInterval1["Nº Mensajes"] > 10) & (dataInterval1["Nº Mensajes"] <= 30)]
-    totalMACRA_30 = dataInterval1.loc[dataInterval1["Nº Mensajes"] > 30]
+    totalMACRB_10 = dataRB.loc[dataRB["Nº Mensajes"] <= 10]
+    totalMACRB_1030 = dataRB.loc[(dataRB["Nº Mensajes"] > 10) & (dataRB["Nº Mensajes"] <= 30)]
+    totalMACRB_30 = dataRB.loc[dataRB["Nº Mensajes"] > 30]
 
-    totalMACRB_10 = dataInterval2.loc[dataInterval2["Nº Mensajes"] <= 10]
-    totalMACRB_1030 = dataInterval2.loc[(dataInterval2["Nº Mensajes"] > 10) & (dataInterval2["Nº Mensajes"] <= 30)]
-    totalMACRB_30 = dataInterval2.loc[dataInterval2["Nº Mensajes"] > 30]
+    totalMACRC_10 = dataRC.loc[dataRC["Nº Mensajes"] <= 10]
+    totalMACRC_1030 = dataRC.loc[(dataRC["Nº Mensajes"] > 10) & (dataRC["Nº Mensajes"] <= 30)]
+    totalMACRC_30 = dataRC.loc[dataRC["Nº Mensajes"] > 30]
 
-    totalMACRC_10 = dataInterval3.loc[dataInterval3["Nº Mensajes"] <= 10]
-    totalMACRC_1030 = dataInterval3.loc[(dataInterval3["Nº Mensajes"] > 10) & (dataInterval3["Nº Mensajes"] <= 30)]
-    totalMACRC_30 = dataInterval3.loc[dataInterval3["Nº Mensajes"] > 30]
+    totalMACRD_10 = dataRD.loc[dataRD["Nº Mensajes"] <= 10]
+    totalMACRD_1030 = dataRD.loc[(dataRD["Nº Mensajes"] > 10) & (dataRD["Nº Mensajes"] <= 30)]
+    totalMACRD_30 = dataRD.loc[dataRD["Nº Mensajes"] > 30]
 
-    totalMACRD_10 = dataInterval4.loc[dataInterval4["Nº Mensajes"] <= 10]
-    totalMACRD_1030 = dataInterval4.loc[(dataInterval4["Nº Mensajes"] > 10) & (dataInterval4["Nº Mensajes"] <= 30)]
-    totalMACRD_30 = dataInterval4.loc[dataInterval4["Nº Mensajes"] > 30]
-
-    totalMACRE_10 = dataInterval5.loc[dataInterval5["Nº Mensajes"] <= 10]
-    totalMACRE_1030 = dataInterval5.loc[(dataInterval5["Nº Mensajes"] > 10) & (dataInterval5["Nº Mensajes"] <= 30)]
-    totalMACRE_30 = dataInterval5.loc[dataInterval5["Nº Mensajes"] > 30]
+    totalMACRE_10 = dataRE.loc[dataRE["Nº Mensajes"] <= 10]
+    totalMACRE_1030 = dataRE.loc[(dataRE["Nº Mensajes"] > 10) & (dataRE["Nº Mensajes"] <= 30)]
+    totalMACRE_30 = dataRE.loc[dataRE["Nº Mensajes"] > 30]
 
     day = data["Timestamp"].dt.date[0].strftime(format="%Y-%m-%d")
 
