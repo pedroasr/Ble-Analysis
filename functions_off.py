@@ -62,10 +62,10 @@ def readDataFromDirectory(dataPath, personCountPath, statePath):
 
         personCount = personCount.groupby(pd.Grouper(key="Timestamp", freq="5T")).last()
         day = personCount.index.date[0].strftime(format="%Y-%m-%d")
-        personCount = setDateTimeLimits(personCount, [0, 1], day)
+        personCount = setDateTimeLimits(personCount, [np.nan, 0], day)
 
         personCount.set_index("Timestamp", inplace=True)
-        personCount = personCount.resample("5T").asfreq().interpolate()
+        personCount = personCount.resample("5T").mean().interpolate()
         personCount = personCount.round()
         personCount["Estado"].fillna(1, inplace=True)
         personCount["Ocupacion"].fillna(0, inplace=True)
@@ -449,7 +449,14 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
         REDownInterval = state.loc[state["RE(1/0)"] == 0].index
         RDownInterval = (RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval)
 
-        dataGroup = data.groupby("Timestamp").nunique()
+        dataGroup = data.copy()
+        dataGroup[(dataGroup["Timestamp"].isin(RADownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry A"]))] = np.nan
+        dataGroup[(dataGroup["Timestamp"].isin(RBDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry B"]))] = np.nan
+        dataGroup[(dataGroup["Timestamp"].isin(RCDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry C"]))] = np.nan
+        dataGroup[(dataGroup["Timestamp"].isin(RDDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry D"]))] = np.nan
+        dataGroup[(dataGroup["Timestamp"].isin(REDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry E"]))] = np.nan
+
+        dataGroup = dataGroup.groupby("Timestamp").nunique()
         dataGroup = setDateTimeLimits(dataGroup, [np.nan, np.nan, np.nan], day)
         dataGroup.set_index("Timestamp", inplace=True)
         dataGroup = dataGroup.resample("5T").asfreq()
