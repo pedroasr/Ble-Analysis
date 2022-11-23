@@ -129,8 +129,7 @@ def getTotalDevicesByRaspberry(data, state):
 
     day = data["Timestamp"].dt.date[0].strftime(format="%Y-%m-%d")
 
-    for i in range(len(dataArray)):
-        column = dataArray[i]
+    for i, column in enumerate(dataArray):
         column = setDateTimeLimits(column, [0], day)
         column.set_index("Timestamp", inplace=True)
         column = column.resample("5T").asfreq().fillna(0)
