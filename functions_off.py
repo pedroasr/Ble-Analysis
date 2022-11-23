@@ -219,6 +219,21 @@ def getTotalDevicesByPairRaspberries(data, state):
     return totalMACRCDE.values, totalMACRCE.values, totalMACRDE.values, totalMACRBE.values
 
 
+def getDevicesByMessageRange(dataArray):
+    """Función que devuelve una lista con el número de dispositivos captados en funcion del número de mensajes recibidos"""
+
+    finalDataList = []
+    for data in dataArray:
+        totalMACR_10 = data.loc[data["Nº Mensajes"] <= 10]
+        finalDataList.append(totalMACR_10)
+        totalMACR_1030 = data.loc[(data["Nº Mensajes"] > 10) & (data["Nº Mensajes"] <= 30)]
+        finalDataList.append(totalMACR_1030)
+        totalMACR_30 = data.loc[data["Nº Mensajes"] > 30]
+        finalDataList.append(totalMACR_30)
+
+    return finalDataList
+
+
 def getTotalDeviceByMessageNumber(data, state):
     """Función que devuelve tres listas por Raspberry, una por intervalo de número de mensajes por debajo
     de 10, entre 10 y 30 y superior a 30."""
@@ -232,32 +247,10 @@ def getTotalDeviceByMessageNumber(data, state):
     dataRD = dataRD.groupby(["Timestamp", "MAC"]).sum()
     dataRE = dataRE.groupby(["Timestamp", "MAC"]).sum()
 
-    totalMACRA_10 = dataRA.loc[dataRA["Nº Mensajes"] <= 10]
-    totalMACRA_1030 = dataRA.loc[(dataRA["Nº Mensajes"] > 10) & (dataRA["Nº Mensajes"] <= 30)]
-    totalMACRA_30 = dataRA.loc[dataRA["Nº Mensajes"] > 30]
-
-    totalMACRB_10 = dataRB.loc[dataRB["Nº Mensajes"] <= 10]
-    totalMACRB_1030 = dataRB.loc[(dataRB["Nº Mensajes"] > 10) & (dataRB["Nº Mensajes"] <= 30)]
-    totalMACRB_30 = dataRB.loc[dataRB["Nº Mensajes"] > 30]
-
-    totalMACRC_10 = dataRC.loc[dataRC["Nº Mensajes"] <= 10]
-    totalMACRC_1030 = dataRC.loc[(dataRC["Nº Mensajes"] > 10) & (dataRC["Nº Mensajes"] <= 30)]
-    totalMACRC_30 = dataRC.loc[dataRC["Nº Mensajes"] > 30]
-
-    totalMACRD_10 = dataRD.loc[dataRD["Nº Mensajes"] <= 10]
-    totalMACRD_1030 = dataRD.loc[(dataRD["Nº Mensajes"] > 10) & (dataRD["Nº Mensajes"] <= 30)]
-    totalMACRD_30 = dataRD.loc[dataRD["Nº Mensajes"] > 30]
-
-    totalMACRE_10 = dataRE.loc[dataRE["Nº Mensajes"] <= 10]
-    totalMACRE_1030 = dataRE.loc[(dataRE["Nº Mensajes"] > 10) & (dataRE["Nº Mensajes"] <= 30)]
-    totalMACRE_30 = dataRE.loc[dataRE["Nº Mensajes"] > 30]
+    dataArray = getDevicesByMessageRange([dataRA, dataRB, dataRC, dataRD, dataRE])
 
     day = data["Timestamp"].dt.date[0].strftime(format="%Y-%m-%d")
 
-    dataArray = [totalMACRA_10, totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30,
-                 totalMACRC_10,
-                 totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10,
-                 totalMACRE_1030, totalMACRE_30]
     finalDataList = []
 
     for i in range(len(dataArray)):
@@ -444,11 +437,16 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
         RDownInterval = (RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval)
 
         dataGroup = data.copy()
-        dataGroup[(dataGroup["Timestamp"].isin(RADownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry A"]))] = np.nan
-        dataGroup[(dataGroup["Timestamp"].isin(RBDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry B"]))] = np.nan
-        dataGroup[(dataGroup["Timestamp"].isin(RCDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry C"]))] = np.nan
-        dataGroup[(dataGroup["Timestamp"].isin(RDDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry D"]))] = np.nan
-        dataGroup[(dataGroup["Timestamp"].isin(REDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry E"]))] = np.nan
+        dataGroup[
+            (dataGroup["Timestamp"].isin(RADownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry A"]))] = np.nan
+        dataGroup[
+            (dataGroup["Timestamp"].isin(RBDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry B"]))] = np.nan
+        dataGroup[
+            (dataGroup["Timestamp"].isin(RCDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry C"]))] = np.nan
+        dataGroup[
+            (dataGroup["Timestamp"].isin(RDDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry D"]))] = np.nan
+        dataGroup[
+            (dataGroup["Timestamp"].isin(REDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry E"]))] = np.nan
 
         dataGroup = dataGroup.groupby("Timestamp").nunique()
         dataGroup = setDateTimeLimits(dataGroup, [np.nan, np.nan, np.nan], day)
