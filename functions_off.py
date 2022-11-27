@@ -53,6 +53,7 @@ def readDataFromDirectory(dataPath, personCountPath, statePath):
         data["Timestamp int."] = pd.to_datetime(data["Timestamp int."], dayfirst=True)
         data = data.rename(columns={"Timestamp int.": "Timestamp"})
         data = data.drop(data[data["MAC"] == "00:00:00:00:00:00"].index).reset_index(drop=True)
+        data.set_index("Timestamp", inplace=True)
         dataArray.append(data)
 
     for file in personCountPath.iterdir():
@@ -127,7 +128,7 @@ def getTotalDevicesByRaspberry(data, state):
     statusList = [RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval]
     finalDataList = []
 
-    day = data["Timestamp"].dt.date[0].strftime(format="%Y-%m-%d")
+    day = data.index.date[0].strftime(format="%Y-%m-%d")
 
     for i, column in enumerate(dataArray):
         column = setDateTimeLimits(column, [0], day)
@@ -154,17 +155,11 @@ def getTotalDevicesByPairRaspberries(data, state):
     dataRA, dataRB, dataRC, dataRD, dataRE = parseDataByRaspberry(data)
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
-    dataRA.drop(columns="Nº Mensajes", inplace=True)
-    dataRB.drop(columns="Nº Mensajes", inplace=True)
-    dataRC.drop(columns="Nº Mensajes", inplace=True)
-    dataRD.drop(columns="Nº Mensajes", inplace=True)
-    dataRE.drop(columns="Nº Mensajes", inplace=True)
-
-    nDevicesIntervalDataRAMerge = dataRA.set_index("Timestamp")
-    nDevicesIntervalDataRBMerge = dataRB.set_index("Timestamp")
-    nDevicesIntervalDataRCMerge = dataRC.set_index("Timestamp")
-    nDevicesIntervalDataRDMerge = dataRD.set_index("Timestamp")
-    nDevicesIntervalDataREMerge = dataRE.set_index("Timestamp")
+    nDevicesIntervalDataRAMerge = dataRA.drop(columns="Nº Mensajes")
+    nDevicesIntervalDataRBMerge = dataRB.drop(columns="Nº Mensajes")
+    nDevicesIntervalDataRCMerge = dataRC.drop(columns="Nº Mensajes")
+    nDevicesIntervalDataRDMerge = dataRD.drop(columns="Nº Mensajes")
+    nDevicesIntervalDataREMerge = dataRE.drop(columns="Nº Mensajes")
 
     nDevicesIntervalDataRDEMerge = nDevicesIntervalDataRDMerge.merge(nDevicesIntervalDataREMerge, how='outer',
                                                                      on=("Timestamp", "MAC"), copy=False,
@@ -189,8 +184,7 @@ def getTotalDevicesByPairRaspberries(data, state):
     dataArray = [group_CDE, group_CE, group_DE, group_BE]
     finalDataList = []
 
-    for i in range(len(dataArray)):
-        column = dataArray[i]
+    for i, column in enumerate(dataArray):
         column.reset_index(inplace=True)
         column = column["Timestamp"].value_counts(sort=False)
         column = setDateTimeLimits(column, 0, day, False)
@@ -247,12 +241,11 @@ def getTotalDeviceByMessageNumber(data, state):
 
     dataArray = getDevicesByMessageRange([dataRA, dataRB, dataRC, dataRD, dataRE])
 
-    day = data["Timestamp"].dt.date[0].strftime(format="%Y-%m-%d")
+    day = data.index.date[0].strftime(format="%Y-%m-%d")
 
     finalDataList = []
 
-    for i in range(len(dataArray)):
-        column = dataArray[i]
+    for i, column in enumerate(dataArray):
         column.reset_index(inplace=True)
         column = column["Timestamp"].value_counts(sort=False)
         column = setDateTimeLimits(column, 0, day, False)
@@ -287,14 +280,13 @@ def getTotalDevicesInPreviousInterval(data, state):
     dataCopy = data.copy()
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
-    dataCopy[(dataCopy["Timestamp"].isin(RADownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry A"]))] = np.nan
-    dataCopy[(dataCopy["Timestamp"].isin(RBDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry B"]))] = np.nan
-    dataCopy[(dataCopy["Timestamp"].isin(RCDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry C"]))] = np.nan
-    dataCopy[(dataCopy["Timestamp"].isin(RDDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry D"]))] = np.nan
-    dataCopy[(dataCopy["Timestamp"].isin(REDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry E"]))] = np.nan
+    dataCopy[(dataCopy.index.isin(RADownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry A"]))] = np.nan
+    dataCopy[(dataCopy.index.isin(RBDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry B"]))] = np.nan
+    dataCopy[(dataCopy.index.isin(RCDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry C"]))] = np.nan
+    dataCopy[(dataCopy.index.isin(RDDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry D"]))] = np.nan
+    dataCopy[(dataCopy.index.isin(REDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry E"]))] = np.nan
 
-    day = dataCopy["Timestamp"].iloc[0].date().strftime('%Y-%m-%d')
-    dataCopy.set_index("Timestamp", inplace=True)
+    day = dataCopy.index.date[0].strftime('%Y-%m-%d')
     dataCopy.dropna(inplace=True)
     dataCopy.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
 
@@ -326,14 +318,13 @@ def getTotalDevicesInTwoPreviousIntervals(data, state):
     dataCopy = data.copy()
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
-    dataCopy[(dataCopy["Timestamp"].isin(RADownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry A"]))] = np.nan
-    dataCopy[(dataCopy["Timestamp"].isin(RBDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry B"]))] = np.nan
-    dataCopy[(dataCopy["Timestamp"].isin(RCDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry C"]))] = np.nan
-    dataCopy[(dataCopy["Timestamp"].isin(RDDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry D"]))] = np.nan
-    dataCopy[(dataCopy["Timestamp"].isin(REDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry E"]))] = np.nan
+    dataCopy[(dataCopy.index.isin(RADownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry A"]))] = np.nan
+    dataCopy[(dataCopy.index.isin(RBDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry B"]))] = np.nan
+    dataCopy[(dataCopy.index.isin(RCDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry C"]))] = np.nan
+    dataCopy[(dataCopy.index.isin(RDDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry D"]))] = np.nan
+    dataCopy[(dataCopy.index.isin(REDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry E"]))] = np.nan
 
-    day = dataCopy["Timestamp"].iloc[0].date().strftime('%Y-%m-%d')
-    dataCopy.set_index("Timestamp", inplace=True)
+    day = dataCopy.index.date[0].strftime('%Y-%m-%d')
     dataCopy.dropna(inplace=True)
     dataCopy.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
 
@@ -362,7 +353,6 @@ def getTotalDevicesInTwoPreviousIntervals(data, state):
 def savePlotColumns(data, path, path2):
     """Función que guarda en una carpeta las gráficas para cada una de las columnas del training set."""
 
-    data["Timestamp"] = pd.to_datetime(data["Timestamp"])
     day = data["Timestamp"].iloc[0].date().strftime('%Y-%m-%d')
 
     for i in range(3, len(data.columns)):
@@ -417,7 +407,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
     filterDataSet = pd.DataFrame(columns=columnsFilter)
     filledDataSet = pd.DataFrame(columns=columnsFilter)
     sample = 5
-    length = len(dataArray[0]["Timestamp"].unique())
+    length = len(dataArray[0].index.unique())
     minutes = np.linspace(0, (length - 1) * sample, length, dtype=int)
 
     for i in range(len(dataArray)):
@@ -425,7 +415,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
         personCount = personCountArray[i]
         state = stateArray[i]
 
-        day = data["Timestamp"][0].date().strftime('%Y-%m-%d')
+        day = data.index[0].date().strftime('%Y-%m-%d')
 
         RADownInterval = state.loc[state["RA(1/0)"] == 0].index
         RBDownInterval = state.loc[state["RB(1/0)"] == 0].index
@@ -436,15 +426,15 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
 
         dataGroup = data.copy()
         dataGroup[
-            (dataGroup["Timestamp"].isin(RADownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry A"]))] = np.nan
+            (dataGroup.index.isin(RADownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry A"]))] = np.nan
         dataGroup[
-            (dataGroup["Timestamp"].isin(RBDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry B"]))] = np.nan
+            (dataGroup.index.isin(RBDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry B"]))] = np.nan
         dataGroup[
-            (dataGroup["Timestamp"].isin(RCDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry C"]))] = np.nan
+            (dataGroup.index.isin(RCDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry C"]))] = np.nan
         dataGroup[
-            (dataGroup["Timestamp"].isin(RDDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry D"]))] = np.nan
+            (dataGroup.index.isin(RDDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry D"]))] = np.nan
         dataGroup[
-            (dataGroup["Timestamp"].isin(REDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry E"]))] = np.nan
+            (dataGroup.index.isin(REDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry E"]))] = np.nan
 
         dataGroup = dataGroup.groupby("Timestamp").nunique()
         dataGroup = setDateTimeLimits(dataGroup, [np.nan, np.nan, np.nan], day)
@@ -463,7 +453,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
 
         totalMACTwoPreviousInterval = getTotalDevicesInTwoPreviousIntervals(data, RDownInterval)
 
-        timestamp = data["Timestamp"].unique()
+        timestamp = data.index.unique()
         timestamp = pd.Series(np.zeros(len(timestamp)), index=timestamp, name="Timestamp")
         timestamp = setDateTimeLimits(timestamp, 0, day, False)
         timestamp = timestamp.resample("5T").asfreq()
@@ -483,9 +473,10 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
                                               totalMACTwoPreviousInterval]))
 
         trainingSet = pd.DataFrame(trainingData, columns=columns)
+        trainingSet["Timestamp"] = pd.to_datetime(trainingSet["Timestamp"])
 
         trainingDataSet = pd.concat([trainingDataSet, trainingSet], ignore_index=True)
-        print(trainingDataSet)
+
         print("Guardando gráficas de los datos calculados de la fecha " + day + "...")
         savePlotColumns(trainingSet, "../figures/", "../figuresDate/")
 
