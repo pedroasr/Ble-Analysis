@@ -5,7 +5,6 @@ from matplotlib import pyplot as plt
 import warnings
 
 warnings.filterwarnings("ignore")
-pd.options.mode.chained_assignment = None
 
 
 def setDateTimeLimits(data, values, day, isDf=True):
