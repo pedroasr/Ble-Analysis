@@ -25,6 +25,7 @@ def setDateTimeLimits(data, values, day, isDf=True):
 
         if endDate not in data["Timestamp"].unique():
             data = pd.concat([data, dfEnd])
+        data.set_index("Timestamp", inplace=True)
 
     else:
         dfInit = pd.Series(values, index=[initDate], name="Timestamp")
@@ -64,7 +65,6 @@ def readDataFromDirectory(dataPath, personCountPath, statePath):
         day = personCount.index.date[0].strftime(format="%Y-%m-%d")
         personCount = setDateTimeLimits(personCount, [np.nan, 0], day)
 
-        personCount.set_index("Timestamp", inplace=True)
         personCount = personCount.resample("5T").mean().interpolate()
         personCount = personCount.round()
         personCount["Estado"].fillna(1, inplace=True)
@@ -131,7 +131,6 @@ def getTotalDevicesByRaspberry(data, state):
 
     for i, column in enumerate(dataArray):
         column = setDateTimeLimits(column, [0], day)
-        column.set_index("Timestamp", inplace=True)
         column = column.resample("5T").asfreq().fillna(0)
         column.loc[statusList[i], "MAC"] = np.nan
 
@@ -219,7 +218,7 @@ def getTotalDevicesByPairRaspberries(data, state):
 
 
 def getDevicesByMessageRange(dataArray):
-    """Función que devuelve una lista con el número de dispositivos captados en funcion del número de mensajes recibidos"""
+    """Función que devuelve una lista con el número de dispositivos captados en función del número de mensajes recibidos"""
 
     finalDataList = []
     for data in dataArray:
@@ -449,7 +448,6 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
 
         dataGroup = dataGroup.groupby("Timestamp").nunique()
         dataGroup = setDateTimeLimits(dataGroup, [np.nan, np.nan, np.nan], day)
-        dataGroup.set_index("Timestamp", inplace=True)
         dataGroup = dataGroup.resample("5T").asfreq()
         totalMAC = dataGroup["MAC"].values
 
@@ -487,7 +485,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
         trainingSet = pd.DataFrame(trainingData, columns=columns)
 
         trainingDataSet = pd.concat([trainingDataSet, trainingSet], ignore_index=True)
-
+        print(trainingDataSet)
         print("Guardando gráficas de los datos calculados de la fecha " + day + "...")
         savePlotColumns(trainingSet, "../figures/", "../figuresDate/")
 
