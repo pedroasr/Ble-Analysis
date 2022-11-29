@@ -584,9 +584,9 @@ def getTrainingDataset(dataArray, personCountArray, stateArray, name):
     return trainingDataSet, filterDataSet, filledDataSet
 
 
-# dataList, personCountList, stateList = readDataFromDirectory("../docs/data", "../docs/personcount", "../docs/state")
+dataList, personCountList, stateList = readDataFromDirectory("../docs/data", "../docs/personcount", "../docs/state")
 
-# getTrainingDataset(dataList, personCountList, stateList, "training")
+getTrainingDataset(dataList, personCountList, stateList, "training")
 
 dataList, personCountList, stateList = readDataFromDirectory("../docs/data_test", "../docs/personcount_test", "../docs/state_test")
 
