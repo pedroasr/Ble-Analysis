@@ -73,15 +73,16 @@ def readDataFromDirectory(dataPath, personCountPath, statePath):
         personCount.drop(columns=["Fecha", "Hora"], inplace=True)
         personCount["Timestamp"] = pd.to_datetime(personCount["Timestamp"], dayfirst=True)
 
-        personCount = personCount.groupby(pd.Grouper(key="Timestamp", freq="5T")).last()
+        personCount = personCount.groupby(pd.Grouper(key="Timestamp", freq="5T")).last().fillna(method="ffill")
         day = personCount.index.date[0].strftime(format="%Y-%m-%d")
         personCount = setDateTimeLimits(personCount, [np.nan, 0], day)
 
-        personCount = personCount.resample("5T").mean().interpolate()
+        personCount = personCount.resample("5T").asfreq()
         personCount = personCount.round()
         personCount["Estado"].fillna(0, inplace=True)
         personCount["Ocupacion"].fillna(np.nan, inplace=True)
         personCount.loc[personCount["Estado"] == 0, "Ocupacion"] = np.nan
+
         personCountArray.append(personCount)
 
     # Para los datos del estado de las Raspberries, se genera la columna Timestamp y se eliminan las que no son necesarias.
@@ -583,9 +584,9 @@ def getTrainingDataset(dataArray, personCountArray, stateArray, name):
     return trainingDataSet, filterDataSet, filledDataSet
 
 
-dataList, personCountList, stateList = readDataFromDirectory("../docs/data", "../docs/personcount", "../docs/state")
+# dataList, personCountList, stateList = readDataFromDirectory("../docs/data", "../docs/personcount", "../docs/state")
 
-getTrainingDataset(dataList, personCountList, stateList, "training")
+# getTrainingDataset(dataList, personCountList, stateList, "training")
 
 dataList, personCountList, stateList = readDataFromDirectory("../docs/data_test", "../docs/personcount_test", "../docs/state_test")
 
