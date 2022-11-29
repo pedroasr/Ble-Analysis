@@ -21,7 +21,7 @@ clfRfr = RandomizedSearchCV(rfr, distributionRfr, random_state=0, cv=5)
 searchRfr = clfRfr.fit(X, y)
 bestParamsRfr = searchRfr.best_params_
 bestScoreRfr = searchRfr.best_score_
-print(f"Best param of n_estimators: {bestParamsRfr.n_estimators:0.4f}")
+print(f"Best param of n_estimators: {bestParamsRfr['n_estimators']:0.4f}")
 print(f"R Square of RandomForestRegressor: {bestScoreRfr:0.4f}")
 bestEstimatorRfr = RandomForestRegressor(n_estimators=bestParamsRfr["n_estimators"])
 modelRfr = bestEstimatorRfr.fit(X, y)
@@ -35,7 +35,7 @@ clfEtr = RandomizedSearchCV(etr, distributionEtr, random_state=0, cv=5)
 searchEtr = clfEtr.fit(X, y)
 bestParamsEtr = searchEtr.best_params_
 bestScoreEtr = searchEtr.best_score_
-print(f"Best param of n_estimators: {bestParamsEtr.n_estimators:0.4f}")
+print(f"Best param of n_estimators: {bestParamsEtr['n_estimators']:0.4f}")
 print(f"R Square of ExtraTreesRegressor: {bestScoreEtr:0.4f}")
 bestEstimatorEtr = ExtraTreesRegressor(n_estimators=bestParamsEtr["n_estimators"])
 modelEtr = bestEstimatorEtr.fit(X, y)
@@ -50,7 +50,7 @@ searchXgbm = clfXgbm.fit(X, y)
 bestParamsXgbm = searchXgbm.best_params_
 bestScoreXgbm = searchXgbm.best_score_
 print(
-    f"Best param of eta: {bestParamsEtr.eta:0.4f}, max_depth: {bestParamsEtr.max_depth:0.4f}, subsample: {bestParamsEtr.subsample:0.4f}")
+    f"Best param of eta: {bestParamsEtr['eta']:0.4f}, max_depth: {bestParamsEtr['max_depth']:0.4f}, subsample: {bestParamsEtr['subsample']:0.4f}")
 print(f"R Square of XGBRegressor: {bestScoreXgbm:0.4f}")
 bestEstimatorXgbm = xgb.XGBRegressor(eta=bestParamsXgbm["eta"], max_depth=bestParamsXgbm["max_depth"],
                                      subsample=bestParamsXgbm["subsample"])
