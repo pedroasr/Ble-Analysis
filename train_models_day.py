@@ -1,14 +1,11 @@
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
-from sklearn.experimental import enable_hist_gradient_boosting
-from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
+from sklearn.ensemble import ExtraTreesRegressor, RandomForestRegressor
 import lightgbm as ltb
 
-pd.options.mode.chained_assignment = None
 
-
-data = pd.read_csv("../docs/filled-training-set.csv", sep=";")
+data = pd.read_csv("../docs/filled-test-set.csv", sep=";")
 
 data["Fecha"] = data["Timestamp"].apply(lambda x: x.split(" ")[0])
 fechas = data["Fecha"].unique()

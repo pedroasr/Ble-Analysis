@@ -412,17 +412,21 @@ def getTotalDevicesInTwoPreviousIntervals(data, state):
     return totalMACTwoPreviousInterval
 
 
-def savePlotColumns(data, path):
+def savePlotColumns(data, path, categoryName):
     """Función que guarda en una carpeta las gráficas para cada una de las columnas del training set."""
 
     day = data["Timestamp"].iloc[0].date().strftime('%Y-%m-%d')
-    folder = path + day + "/"
+    folder = path + categoryName + "/"
+    if not os.path.exists(folder):
+        os.mkdir(folder)
+
+    imgFolder = folder + day + "/"
 
     # Para cada columna del Dataframe pasado como argumento, se grafica en comparación de la ocupación en función del tiempo.
     for i in range(3, len(data.columns)):
         name = data.columns[i]
-        if not os.path.exists(folder):
-            os.mkdir(folder)
+        if not os.path.exists(imgFolder):
+            os.mkdir(imgFolder)
 
         plt.figure(figsize=(10, 6))
         plt.plot(data["Timestamp"], data["Ocupacion"], label="Ocupacion", color="red")
@@ -431,7 +435,7 @@ def savePlotColumns(data, path):
         plt.ylabel("Devices")
         plt.legend()
         plt.title(name)
-        plt.savefig(folder + name + '.jpg')
+        plt.savefig(imgFolder + name + '.jpg')
         plt.clf()
         plt.close()
 
@@ -449,7 +453,7 @@ def fillTrainingSet(data):
     return filledSet
 
 
-def getTrainingDataset(dataArray, personCountArray, stateArray):
+def getTrainingDataset(dataArray, personCountArray, stateArray, name):
     """Función que devuelve un conjunto de datos para el algoritmo de Machine Learning y un dataframe con los valores
     acumulados hasta ese momento"""
 
@@ -558,7 +562,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
         trainingDataSet = pd.concat([trainingDataSet, trainingSet], ignore_index=True)
 
         print("Guardando gráficas de los datos calculados de la fecha " + day + "...")
-        savePlotColumns(trainingSet, "../figures/")
+        savePlotColumns(trainingSet, "../figures/", name)
 
         # Se concatena el Dataframe creado al Dataframe que contiene los datos resumidos.
         filterSet = trainingSet[columnsFilter]
@@ -569,16 +573,20 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
         filledDataSet = pd.concat([filledDataSet, filledSet], ignore_index=True)
 
         print("Guardando gráficas de los datos limpios de la fecha " + day + "...")
-        savePlotColumns(filledSet, "../figuresFilled/")
+        savePlotColumns(filledSet, "../figuresFilled/", name)
 
     # Se guardan los datos en archivos csv.
-    trainingDataSet.to_csv("../docs/training-set.csv", sep=";", na_rep="NaN", index=False)
-    filterDataSet.to_csv("../docs/filter-training-set.csv", sep=";", na_rep="NaN", index=False)
-    filledDataSet.to_csv("../docs/filled-training-set.csv", sep=";", na_rep="NaN", index=False)
+    trainingDataSet.to_csv("../docs/"+name+"-set.csv", sep=";", na_rep="NaN", index=False)
+    filterDataSet.to_csv("../docs/filter-"+name+"-set.csv", sep=";", na_rep="NaN", index=False)
+    filledDataSet.to_csv("../docs/filled-"+name+"-set.csv", sep=";", na_rep="NaN", index=False)
 
     return trainingDataSet, filterDataSet, filledDataSet
 
 
 dataList, personCountList, stateList = readDataFromDirectory("../docs/data", "../docs/personcount", "../docs/state")
 
-getTrainingDataset(dataList, personCountList, stateList)
+getTrainingDataset(dataList, personCountList, stateList, "training")
+
+dataList, personCountList, stateList = readDataFromDirectory("../docs/data_test", "../docs/personcount_test", "../docs/state_test")
+
+getTrainingDataset(dataList, personCountList, stateList, "test")
