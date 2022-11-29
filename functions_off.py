@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 import pathlib
@@ -78,8 +79,8 @@ def readDataFromDirectory(dataPath, personCountPath, statePath):
 
         personCount = personCount.resample("5T").mean().interpolate()
         personCount = personCount.round()
-        personCount["Estado"].fillna(1, inplace=True)
-        personCount["Ocupacion"].fillna(0, inplace=True)
+        personCount["Estado"].fillna(0, inplace=True)
+        personCount["Ocupacion"].fillna(np.nan, inplace=True)
         personCount.loc[personCount["Estado"] == 0, "Ocupacion"] = np.nan
         personCountArray.append(personCount)
 
@@ -411,15 +412,17 @@ def getTotalDevicesInTwoPreviousIntervals(data, state):
     return totalMACTwoPreviousInterval
 
 
-def savePlotColumns(data, path, path2):
+def savePlotColumns(data, path):
     """Función que guarda en una carpeta las gráficas para cada una de las columnas del training set."""
 
     day = data["Timestamp"].iloc[0].date().strftime('%Y-%m-%d')
+    folder = path + day + "/"
 
     # Para cada columna del Dataframe pasado como argumento, se grafica en comparación de la ocupación en función del tiempo.
     for i in range(3, len(data.columns)):
-        name = data.columns[i] + "_" + day
-        nameDate = day + "_" + data.columns[i]
+        name = data.columns[i]
+        if not os.path.exists(folder):
+            os.mkdir(folder)
 
         plt.figure(figsize=(10, 6))
         plt.plot(data["Timestamp"], data["Ocupacion"], label="Ocupacion", color="red")
@@ -428,9 +431,7 @@ def savePlotColumns(data, path, path2):
         plt.ylabel("Devices")
         plt.legend()
         plt.title(name)
-        plt.savefig(path + name + '.jpg')
-        plt.title(nameDate)
-        plt.savefig(path2 + nameDate + '.jpg')
+        plt.savefig(folder + name + '.jpg')
         plt.clf()
         plt.close()
 
@@ -474,7 +475,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
     # En intervalos de cinco minutos, se crea la columna Minutes que indica el número de minutos transcurridos desde
     # las 7:00.
     sample = 5
-    length = len(dataArray[0].index.unique())
+    length = len(personCountArray[0].index.unique())
     minutes = np.linspace(0, (length - 1) * sample, length, dtype=int)
 
     # Para cada uno de los archivos cargados, es decir, días, se crea un dataframe con las columnas calculadas.
@@ -557,7 +558,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
         trainingDataSet = pd.concat([trainingDataSet, trainingSet], ignore_index=True)
 
         print("Guardando gráficas de los datos calculados de la fecha " + day + "...")
-        savePlotColumns(trainingSet, "../figures/", "../figuresDate/")
+        savePlotColumns(trainingSet, "../figures/")
 
         # Se concatena el Dataframe creado al Dataframe que contiene los datos resumidos.
         filterSet = trainingSet[columnsFilter]
@@ -568,7 +569,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray):
         filledDataSet = pd.concat([filledDataSet, filledSet], ignore_index=True)
 
         print("Guardando gráficas de los datos limpios de la fecha " + day + "...")
-        savePlotColumns(filledSet, "../figuresFilled/", "../figuresDateFilled/")
+        savePlotColumns(filledSet, "../figuresFilled/")
 
     # Se guardan los datos en archivos csv.
     trainingDataSet.to_csv("../docs/training-set.csv", sep=";", na_rep="NaN", index=False)
