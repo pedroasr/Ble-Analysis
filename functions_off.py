@@ -358,6 +358,7 @@ def getTotalDevicesInPreviousInterval(data, state):
         totalMACPreviousInterval = pd.concat([totalMACPreviousInterval, actualDf])
 
     totalMACPreviousInterval.set_index("Timestamp", inplace=True)
+    totalMACPreviousInterval = setDateTimeLimits(totalMACPreviousInterval, [0], day)
     totalMACPreviousInterval = totalMACPreviousInterval.resample("5T").asfreq().fillna(0)
     totalMACPreviousInterval = np.array(totalMACPreviousInterval["MAC"].values)
 
@@ -407,6 +408,7 @@ def getTotalDevicesInTwoPreviousIntervals(data, state):
         totalMACTwoPreviousInterval = pd.concat([totalMACTwoPreviousInterval, actualDf])
 
     totalMACTwoPreviousInterval.set_index("Timestamp", inplace=True)
+    totalMACTwoPreviousInterval = setDateTimeLimits(totalMACTwoPreviousInterval, [0], day)
     totalMACTwoPreviousInterval = totalMACTwoPreviousInterval.resample("5T").asfreq().fillna(0)
     totalMACTwoPreviousInterval = np.array(totalMACTwoPreviousInterval["MAC"].values)
 
@@ -584,9 +586,9 @@ def getTrainingDataset(dataArray, personCountArray, stateArray, name):
     return trainingDataSet, filterDataSet, filledDataSet
 
 
-dataList, personCountList, stateList = readDataFromDirectory("../docs/data", "../docs/personcount", "../docs/state")
+# dataList, personCountList, stateList = readDataFromDirectory("../docs/data", "../docs/personcount", "../docs/state")
 
-getTrainingDataset(dataList, personCountList, stateList, "training")
+# getTrainingDataset(dataList, personCountList, stateList, "training")
 
 dataList, personCountList, stateList = readDataFromDirectory("../docs/data_test", "../docs/personcount_test", "../docs/state_test")
 
