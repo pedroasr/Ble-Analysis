@@ -453,6 +453,7 @@ def fillTrainingSet(data):
     filledSet.reset_index(inplace=True)
     filledSet = filledSet.round(0)
     filledSet = filledSet[filledSet["Ocupacion"].notna()]
+    filledSet.dropna(inplace=True)
     return filledSet
 
 

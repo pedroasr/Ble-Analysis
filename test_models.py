@@ -1,6 +1,7 @@
 import pandas as pd
 import joblib
 from matplotlib import pyplot as plt
+from matplotlib.dates import DateFormatter
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -18,6 +19,7 @@ dataArray = []
 for date in dates:
     group = testSet.loc[testSet["Timestamp"].dt.date == date]
     data = pd.DataFrame(group[["Timestamp", "Ocupacion"]], columns=["Timestamp", "Ocupacion"])
+
     name = date.strftime("%Y-%m-%d")
 
     X = group.loc[:, (group.columns != "Timestamp") & (group.columns != "Ocupacion")]
@@ -32,14 +34,17 @@ for date in dates:
 
     dataArray.append(data)
 
-    plt.figure(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(10, 6))
+    date_form = DateFormatter("%H:%M")
+    ax.xaxis.set_major_formatter(date_form)
     plt.plot(data["Timestamp"], data["Ocupacion"], label="Ocupacion", color="red")
     plt.plot(data["Timestamp"], data["ExtraTreesRegressor"], label="ExtraTreesRegressor", color="blue")
     plt.plot(data["Timestamp"], data["XGBRegressor"], label="XGBRegressor", color="green")
     plt.plot(data["Timestamp"], data["RandomForestRegressor"], label="RandomForestRegressor", color="yellow")
-    plt.xlabel("Timestamp")
+    plt.xlabel("Hora")
     plt.ylabel("Ocupacion")
     plt.legend()
+    plt.grid()
     plt.title(name)
     plt.savefig("../figuresPredict/" + name + ".jpg")
     plt.clf()
