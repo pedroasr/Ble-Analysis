@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import pathlib
 from matplotlib import pyplot as plt
+from matplotlib.dates import DateFormatter
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -431,7 +432,9 @@ def savePlotColumns(data, path, categoryName):
         if not os.path.exists(imgFolder):
             os.mkdir(imgFolder)
 
-        plt.figure(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(10, 6))
+        date_form = DateFormatter("%H:%M")
+        ax.xaxis.set_major_formatter(date_form)
         plt.plot(data["Timestamp"], data["Ocupacion"], label="Ocupacion", color="red")
         plt.plot(data["Timestamp"], data[data.columns[i]], label=data.columns[i], color="blue")
         plt.xlabel("Timestamp")
