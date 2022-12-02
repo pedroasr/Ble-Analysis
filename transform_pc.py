@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 data = pd.read_csv("../docs/personcount_test/pcount_2022-10-20.csv", sep=";")
 

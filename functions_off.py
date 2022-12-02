@@ -325,6 +325,9 @@ def getTotalDevicesInPreviousInterval(data, state):
     # Se obtiene el estado de las Raspberries.
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
+    invalidDates = set(RADownInterval) & set(RBDownInterval) & set(RCDownInterval) & set(RDDownInterval) & set(
+        REDownInterval)
+
     # Búsqueda en función del intervalo de tiempo y de Raspberry para comprobar su estado.
     dataCopy[(dataCopy.index.isin(RADownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry A"]))] = np.nan
     dataCopy[(dataCopy.index.isin(RBDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry B"]))] = np.nan
@@ -361,6 +364,7 @@ def getTotalDevicesInPreviousInterval(data, state):
     totalMACPreviousInterval.set_index("Timestamp", inplace=True)
     totalMACPreviousInterval = setDateTimeLimits(totalMACPreviousInterval, [0], day)
     totalMACPreviousInterval = totalMACPreviousInterval.resample("5T").asfreq().fillna(0)
+    totalMACPreviousInterval.loc[invalidDates] = np.nan
     totalMACPreviousInterval = np.array(totalMACPreviousInterval["MAC"].values)
 
     return totalMACPreviousInterval
@@ -374,6 +378,9 @@ def getTotalDevicesInTwoPreviousIntervals(data, state):
 
     # Se obtiene el estado de las Raspberries.
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
+
+    invalidDates = set(RADownInterval) & set(RBDownInterval) & set(RCDownInterval) & set(RDDownInterval) & set(
+        REDownInterval)
 
     # Búsqueda en función del intervalo de tiempo y de Raspberry para comprobar su estado.
     dataCopy[(dataCopy.index.isin(RADownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry A"]))] = np.nan
@@ -411,6 +418,7 @@ def getTotalDevicesInTwoPreviousIntervals(data, state):
     totalMACTwoPreviousInterval.set_index("Timestamp", inplace=True)
     totalMACTwoPreviousInterval = setDateTimeLimits(totalMACTwoPreviousInterval, [0], day)
     totalMACTwoPreviousInterval = totalMACTwoPreviousInterval.resample("5T").asfreq().fillna(0)
+    totalMACTwoPreviousInterval.loc[invalidDates] = np.nan
     totalMACTwoPreviousInterval = np.array(totalMACTwoPreviousInterval["MAC"].values)
 
     return totalMACTwoPreviousInterval
@@ -447,13 +455,14 @@ def savePlotColumns(data, path, categoryName):
         plt.close()
 
 
-def fillTrainingSet(data):
+def fillTrainingSet(data, dates):
     """Función que completa el conjunto de entrenamiento filtrado rellenando los valores nulos o eliminando las filas
     imposibles de interpolar"""
 
     dataCopy = data.copy()
     dataCopy.set_index("Timestamp", inplace=True)
     filledSet = dataCopy.resample("5T").mean().interpolate()
+    filledSet.loc[dates] = np.nan
     filledSet.reset_index(inplace=True)
     filledSet = filledSet.round(0)
     filledSet = filledSet[filledSet["Ocupacion"].notna()]
@@ -505,6 +514,9 @@ def getTrainingDataset(dataArray, personCountArray, stateArray, name):
         RDDownInterval = state.loc[state["RD(1/0)"] == 0].index
         REDownInterval = state.loc[state["RE(1/0)"] == 0].index
         RDownInterval = (RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval)
+
+        invalidDates = set(RADownInterval) & set(RBDownInterval) & set(RCDownInterval) & set(RDDownInterval) & set(
+            REDownInterval)
 
         # Añadimos valores nulos donde el estado de la Raspberry es 0.
         dataGroup = data.copy()
@@ -577,7 +589,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray, name):
         filterDataSet = pd.concat([filterDataSet, filterSet], ignore_index=True)
 
         # Se concatena el Dataframe creado al Dataframe que contiene todos los datos finales y se grafica.
-        filledSet = fillTrainingSet(filterSet)
+        filledSet = fillTrainingSet(filterSet, invalidDates)
         filledDataSet = pd.concat([filledDataSet, filledSet], ignore_index=True)
 
         print("Guardando gráficas de los datos limpios de la fecha " + day + "...")
