@@ -67,5 +67,3 @@ for date in dates:
     plt.savefig("../figuresPredict/error/" + name + ".jpg")
     plt.clf()
     plt.close()
-
-
