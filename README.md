@@ -10,7 +10,7 @@ Existen 6 archivos principales:
 - **funtions_off.py**: Archivo que contiene las funciones de preprocesamiento de los datos. Desde la carga de los datos
   en
   bruto hasta la obtención de los datos finales.
-- **select_algorithm_lazy.py**: Archivo que usando laa librería LazyPredict, realiza una comparativa de los algoritmos
+- **select_algorithm_lazy.py**: Archivo que usando la librería *LazyPredict*, realiza una comparativa de los algoritmos
   de
   Machine Learning más comunes para seleccionar el mejor.
 - **train_models.py**: Archivo que contiene la función de entrenamiento de los modelos de Machine Learning, calculando
@@ -30,7 +30,7 @@ Existen 6 archivos principales:
 
 Para ejecutar los scripts, se recomienda hacer uso de dos entornos diferentes, uno para la selección de los mejores
 algoritmos y otro para el resto de los scripts.
-Esto se debe a que la version del paquete *LazyPredict* es incompatible con la versión del resto de paquetes (*pandas*,
+Esto se debe a que la versión del paquete *LazyPredict* es incompatible con la versión del resto de paquetes (*pandas*,
 *numpy*, *scipy*, etc.) utilizados en el resto de los scripts.
 Además, para el primer entorno se recomienda la versión 3.8 de Python, mientras que para el segundo entorno se
 recomienda la versión 3.6 de Python.
@@ -40,7 +40,7 @@ modelos entrenados y guardados en la carpeta *models*.
 Este script genera gráficas de las características calculadas sin procesar, las características seleccionadas y
 procesadas y las predicciones y el error de los modelos entrenados.
 
-Los archivos csv con los datos deben estar dividos en tres carpetas y ordenados por fecha, una para los datos BLE, otra
+Los archivos csv con los datos deben estar divididos en tres carpetas y ordenados por fecha, una para los datos BLE, otra
 para el contador de personas y una última sobre el estado de las Raspberry Pi.
 
 Por último, se debe ejecutar el script **cross_validation_graph.py** para obtener las predicciones de los modelos
