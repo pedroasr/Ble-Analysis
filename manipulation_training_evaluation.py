@@ -16,7 +16,7 @@ getDataset(dataListTrain, personCountListTrain, stateListTrain, "training")
 getDataset(dataListTest, personCountListTest, stateListTest, "test")
 
 # Se entrenan los modelos y se evaluan los resultados.
-trainModels("../docs/filled-training-set.csv", "../docs")
+trainModels("../docs/filled-training-set.csv", "../models")
 
 testModels("../docs/filled-test-set.csv", "../models/ExtraTreesRegressor.pkl", "../models/XGBRegressor.pkl",
            "../models/RandomForestRegressor.pkl", "../figuresTest")
