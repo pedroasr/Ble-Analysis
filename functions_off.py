@@ -65,24 +65,31 @@ def readDataFromDirectory(dataPath, personCountPath, statePath):
         data.set_index("Timestamp", inplace=True)
         dataArray.append(data)
 
-    # Para los datos del contador de personas, se cargan las columnas necesarias, generando la columna Timestamp y
-    # agrupando los valores en intervalos de 5 minutos. En esta carga en el caso de generar un valor nulo, se interpola
-    # y gracias a la columna "Estado", asignamos valor nulo a los intervalos correspondientes.
+    # Para los datos del contador de personas, generando la columna Timestamp y agrupando los valores en intervalos de 5
+    # minutos. En esta carga en el caso de generar un valor nulo, se interpola en caso de ser hora de estudio y posteiriormente,
+    # se rellena con valores nulos para tener el mismo número de intervalos temporales que los datos BLE.
     for file in personCountPath.iterdir():
-        personCount = pd.read_csv(file, sep=';', usecols=["Fecha", "Hora", "Ocupacion", "Estado"])
+        personCount = pd.read_csv(file, sep=';')
         personCount.insert(0, "Timestamp", personCount.Fecha.str.cat(personCount.Hora, sep=" "))
         personCount.drop(columns=["Fecha", "Hora"], inplace=True)
         personCount["Timestamp"] = pd.to_datetime(personCount["Timestamp"], dayfirst=True)
 
+        # Si existe la columna Sensor, debe tratarse de manera distinta.
+        if "Sensor" in personCount.columns:
+            personCount = personCount.drop(personCount[personCount["Sensor"] == "KeepAlive"].index)
+            personCount.replace({"Right2": "Right"}, inplace=True)
+            personCount.drop_duplicates(subset=["Timestamp", "Sensor"], keep="first", inplace=True)
+        personCount["Ocupacion"] = (2 * personCount["Evento In-Out(1/0)"].astype(int) - 1).cumsum()
+
+        # Se rellena e interpola los intervalos dentro de la ventana de estudio.
         personCount = personCount.groupby(pd.Grouper(key="Timestamp", freq="5T")).last().fillna(method="ffill")
+        personCount = personCount.round()
+
+        # Se rellena los intervalos fuera de la ventana de estudio con valores nulos.
         day = personCount.index.date[0].strftime(format="%Y-%m-%d")
         personCount = setDateTimeLimits(personCount, [np.nan, 0], day)
-
         personCount = personCount.resample("5T").asfreq()
-        personCount = personCount.round()
-        personCount["Estado"].fillna(0, inplace=True)
-        personCount["Ocupacion"].fillna(np.nan, inplace=True)
-        personCount.loc[personCount["Estado"] == 0, "Ocupacion"] = np.nan
+        personCount = personCount.loc[:, "Ocupacion"]
 
         personCountArray.append(personCount)
 
@@ -308,12 +315,12 @@ def getTotalDeviceByMessageNumber(data, state):
 
     # Destructuring de la lista para devolver los conjuntos de datos.
     totalMACRA_10, totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30, totalMACRC_10, \
-    totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10, \
-    totalMACRE_1030, totalMACRE_30 = finalDataList
+        totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10, \
+        totalMACRE_1030, totalMACRE_30 = finalDataList
 
     return totalMACRA_10, totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30, totalMACRC_10, \
-           totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10, \
-           totalMACRE_1030, totalMACRE_30
+        totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10, \
+        totalMACRE_1030, totalMACRE_30
 
 
 def getTotalDevicesInPreviousInterval(data, state):
@@ -361,6 +368,7 @@ def getTotalDevicesInPreviousInterval(data, state):
         actualDf = pd.DataFrame([[date, coincidences]], columns=["Timestamp", "MAC"])
         totalMACPreviousInterval = pd.concat([totalMACPreviousInterval, actualDf])
 
+    # Se establece las fechas límite y se rellenan los huecos.
     totalMACPreviousInterval.set_index("Timestamp", inplace=True)
     totalMACPreviousInterval = setDateTimeLimits(totalMACPreviousInterval, [0], day)
     totalMACPreviousInterval = totalMACPreviousInterval.resample("5T").asfreq().fillna(0)
@@ -415,6 +423,7 @@ def getTotalDevicesInTwoPreviousIntervals(data, state):
         actualDf = pd.DataFrame([[date, coincidences]], columns=["Timestamp", "MAC"])
         totalMACTwoPreviousInterval = pd.concat([totalMACTwoPreviousInterval, actualDf])
 
+    # Se establece las fechas límite y se rellenan los huecos.
     totalMACTwoPreviousInterval.set_index("Timestamp", inplace=True)
     totalMACTwoPreviousInterval = setDateTimeLimits(totalMACTwoPreviousInterval, [0], day)
     totalMACTwoPreviousInterval = totalMACTwoPreviousInterval.resample("5T").asfreq().fillna(0)
@@ -460,12 +469,15 @@ def fillTrainingSet(data, dates):
     imposibles de interpolar"""
 
     dataCopy = data.copy()
+
+    # Se interpolan los valores en los que sea posible.
     dataCopy.set_index("Timestamp", inplace=True)
     filledSet = dataCopy.resample("5T").mean().interpolate()
+
+    # En las fechas donde hubo fallos, se eliminan las filas.
     filledSet.loc[dates] = np.nan
     filledSet.reset_index(inplace=True)
     filledSet = filledSet.round(0)
-    filledSet = filledSet[filledSet["Ocupacion"].notna()]
     filledSet.dropna(inplace=True)
     return filledSet
 
@@ -545,8 +557,8 @@ def getTrainingDataset(dataArray, personCountArray, stateArray, name):
 
         # Se calculan los dispositivos únicos en función del número de mensajes por Raspberry.
         totalMACRA_10, totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30, totalMACRC_10, \
-        totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10, totalMACRE_1030, \
-        totalMACRE_30 = getTotalDeviceByMessageNumber(data, RDownInterval)
+            totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10, totalMACRE_1030, \
+            totalMACRE_30 = getTotalDeviceByMessageNumber(data, RDownInterval)
 
         # Se calcula el número de dispositivos únicos en el intervalo anterior.
         totalMACPreviousInterval = getTotalDevicesInPreviousInterval(data, RDownInterval)
@@ -596,17 +608,8 @@ def getTrainingDataset(dataArray, personCountArray, stateArray, name):
         savePlotColumns(filledSet, "../figuresFilled/", name)
 
     # Se guardan los datos en archivos csv.
-    trainingDataSet.to_csv("../docs/"+name+"-set.csv", sep=";", na_rep="NaN", index=False)
-    filterDataSet.to_csv("../docs/filter-"+name+"-set.csv", sep=";", na_rep="NaN", index=False)
-    filledDataSet.to_csv("../docs/filled-"+name+"-set.csv", sep=";", na_rep="NaN", index=False)
+    trainingDataSet.to_csv("../docs/" + name + "-set.csv", sep=";", na_rep="NaN", index=False)
+    filterDataSet.to_csv("../docs/filter-" + name + "-set.csv", sep=";", na_rep="NaN", index=False)
+    filledDataSet.to_csv("../docs/filled-" + name + "-set.csv", sep=";", na_rep="NaN", index=False)
 
     return trainingDataSet, filterDataSet, filledDataSet
-
-
-dataList, personCountList, stateList = readDataFromDirectory("../docs/data", "../docs/personcount", "../docs/state")
-
-getTrainingDataset(dataList, personCountList, stateList, "training")
-
-dataList, personCountList, stateList = readDataFromDirectory("../docs/data_test", "../docs/personcount_test", "../docs/state_test")
-
-getTrainingDataset(dataList, personCountList, stateList, "test")
