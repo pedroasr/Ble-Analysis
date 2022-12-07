@@ -464,8 +464,8 @@ def savePlotColumns(data, path, categoryName):
         plt.close()
 
 
-def fillTrainingSet(data, dates):
-    """Función que completa el conjunto de entrenamiento filtrado rellenando los valores nulos o eliminando las filas
+def fillSet(data, dates):
+    """Función que completa el conjunto de datos filtrado rellenando los valores nulos o eliminando las filas
     imposibles de interpolar"""
 
     dataCopy = data.copy()
@@ -482,7 +482,7 @@ def fillTrainingSet(data, dates):
     return filledSet
 
 
-def getTrainingDataset(dataArray, personCountArray, stateArray, name):
+def getDataset(dataArray, personCountArray, stateArray, name):
     """Función que devuelve un conjunto de datos para el algoritmo de Machine Learning y un dataframe con los valores
     acumulados hasta ese momento"""
 
@@ -501,7 +501,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray, name):
                      "N MAC RBE", "N MAC MEN RA 10", "N MAC MEN RB 10", "N MAC MEN RC 10", "N MAC MEN RD 10",
                      "N MAC MEN RE 10", "N MAC INTERVALO ANTERIOR", "N MAC DOS INTERVALOS ANTERIORES"]
 
-    trainingDataSet = pd.DataFrame(columns=columns)
+    rawDataSet = pd.DataFrame(columns=columns)
     filterDataSet = pd.DataFrame(columns=columnsFilter)
     filledDataSet = pd.DataFrame(columns=columnsFilter)
 
@@ -574,7 +574,7 @@ def getTrainingDataset(dataArray, personCountArray, stateArray, name):
         timestamp = timestamp.index.strftime('%Y-%m-%d %H:%M:%S')
 
         # Se crea el dataframe con las columnas calculadas.
-        trainingData = np.array(np.transpose([timestamp, personCount["Ocupacion"].values, minutes, totalMAC,
+        dataSet = np.array(np.transpose([timestamp, personCount["Ocupacion"].values, minutes, totalMAC,
                                               totalMACRA,
                                               totalMACRB,
                                               totalMACRC, totalMACRD, totalMACRE, totalMACRDE, totalMACRCE,
@@ -588,28 +588,28 @@ def getTrainingDataset(dataArray, personCountArray, stateArray, name):
                                               totalMACTwoPreviousInterval]))
 
         # Se concatena el Dataframe creado al Dataframe que contiene todos los datos y se grafica.
-        trainingSet = pd.DataFrame(trainingData, columns=columns)
-        trainingSet["Timestamp"] = pd.to_datetime(trainingSet["Timestamp"])
+        dataSet = pd.DataFrame(dataSet, columns=columns)
+        dataSet["Timestamp"] = pd.to_datetime(dataSet["Timestamp"])
 
-        trainingDataSet = pd.concat([trainingDataSet, trainingSet], ignore_index=True)
+        rawDataSet = pd.concat([rawDataSet, dataSet], ignore_index=True)
 
         print("Guardando gráficas de los datos calculados de la fecha " + day + "...")
-        savePlotColumns(trainingSet, "../figures/", name)
+        savePlotColumns(dataSet, "../figures/", name)
 
         # Se concatena el Dataframe creado al Dataframe que contiene los datos resumidos.
-        filterSet = trainingSet[columnsFilter]
+        filterSet = dataSet[columnsFilter]
         filterDataSet = pd.concat([filterDataSet, filterSet], ignore_index=True)
 
         # Se concatena el Dataframe creado al Dataframe que contiene todos los datos finales y se grafica.
-        filledSet = fillTrainingSet(filterSet, invalidDates)
+        filledSet = fillSet(filterSet, invalidDates)
         filledDataSet = pd.concat([filledDataSet, filledSet], ignore_index=True)
 
         print("Guardando gráficas de los datos limpios de la fecha " + day + "...")
         savePlotColumns(filledSet, "../figuresFilled/", name)
 
     # Se guardan los datos en archivos csv.
-    trainingDataSet.to_csv("../docs/" + name + "-set.csv", sep=";", na_rep="NaN", index=False)
+    rawDataSet.to_csv("../docs/" + name + "-set.csv", sep=";", na_rep="NaN", index=False)
     filterDataSet.to_csv("../docs/filter-" + name + "-set.csv", sep=";", na_rep="NaN", index=False)
     filledDataSet.to_csv("../docs/filled-" + name + "-set.csv", sep=";", na_rep="NaN", index=False)
 
-    return trainingDataSet, filterDataSet, filledDataSet
+    return rawDataSet, filterDataSet, filledDataSet
