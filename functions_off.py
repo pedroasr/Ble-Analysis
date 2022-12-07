@@ -575,17 +575,17 @@ def getDataset(dataArray, personCountArray, stateArray, name):
 
         # Se crea el dataframe con las columnas calculadas.
         dataSet = np.array(np.transpose([timestamp, personCount["Ocupacion"].values, minutes, totalMAC,
-                                              totalMACRA,
-                                              totalMACRB,
-                                              totalMACRC, totalMACRD, totalMACRE, totalMACRDE, totalMACRCE,
-                                              totalMACRCDE, totalMACRBE,
-                                              totalMACRA_10,
-                                              totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030,
-                                              totalMACRB_30, totalMACRC_10,
-                                              totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030,
-                                              totalMACRD_30, totalMACRE_10,
-                                              totalMACRE_1030, totalMACRE_30, totalMACPreviousInterval,
-                                              totalMACTwoPreviousInterval]))
+                                         totalMACRA,
+                                         totalMACRB,
+                                         totalMACRC, totalMACRD, totalMACRE, totalMACRDE, totalMACRCE,
+                                         totalMACRCDE, totalMACRBE,
+                                         totalMACRA_10,
+                                         totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030,
+                                         totalMACRB_30, totalMACRC_10,
+                                         totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030,
+                                         totalMACRD_30, totalMACRE_10,
+                                         totalMACRE_1030, totalMACRE_30, totalMACPreviousInterval,
+                                         totalMACTwoPreviousInterval]))
 
         # Se concatena el Dataframe creado al Dataframe que contiene todos los datos y se grafica.
         dataSet = pd.DataFrame(dataSet, columns=columns)
