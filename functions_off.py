@@ -45,7 +45,7 @@ def setDateTimeLimits(data, values, day, isDf=True):
     return data
 
 
-def readDataFromDirectory(dataPath, personCountPath, statePath):
+def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath):
     """Función que lee los archivos de datos de los receptores Bluetooth y del contador de personas y los concentra en un array"""
 
     # Todos los archivos csv se cargarán dentro de una lista para ser utilizados posteriormente.

@@ -1,14 +1,15 @@
-from functions_off import readDataFromDirectory, getDataset
+from functions_off import readAndPrepareDataFromDirectory, getDataset
 from train_models import trainModels
 from test_models import testModels
 
 # Se cargan los datos de entrenamiento y test.
-dataListTrain, personCountListTrain, stateListTrain = readDataFromDirectory("../docs/data", "../docs/personcount",
-                                                                            "../docs/state")
+dataListTrain, personCountListTrain, stateListTrain = readAndPrepareDataFromDirectory("../docs/data",
+                                                                                      "../docs/personcount",
+                                                                                      "../docs/state")
 
-dataListTest, personCountListTest, stateListTest = readDataFromDirectory("../docs/data_test",
-                                                                         "../docs/personcount_test",
-                                                                         "../docs/state_test")
+dataListTest, personCountListTest, stateListTest = readAndPrepareDataFromDirectory("../docs/data_test",
+                                                                                   "../docs/personcount_test",
+                                                                                   "../docs/state_test")
 
 # Se procesan los datos hasta obtener los conjuntos de entrenamiento y test.
 getDataset(dataListTrain, personCountListTrain, stateListTrain, "training")
