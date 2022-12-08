@@ -28,15 +28,36 @@ estPredict = cross_val_predict(est, X, y, cv=5).astype(int)
 rdfPredict = cross_val_predict(rdf, X, y, cv=5).astype(int)
 xgbmPredict = cross_val_predict(xgbm, X, y, cv=5).astype(int)
 
+# Se calcula el error absoluto.
+estError = np.absolute(estPredict - y["Ocupacion"]).astype(int)
+rdfError = np.absolute(rdfPredict - y["Ocupacion"]).astype(int)
+xgbmError = np.absolute(xgbmPredict - y["Ocupacion"]).astype(int)
+
 # Se guardan los datos en un DataFrame.
-data = np.array(np.transpose([dates, y["Ocupacion"], estPredict, rdfPredict, xgbmPredict]))
-predDataframe = pd.DataFrame(data=data, columns=["Timestamp", "Ocupacion", "ExtraTreesRegressor", "RandomForestRegressor", "XGBRegressor"])
+data = np.array(
+    np.transpose([dates, y["Ocupacion"], estPredict, rdfPredict, xgbmPredict, estError, rdfError, xgbmError]))
+predDataframe = pd.DataFrame(data=data,
+                             columns=["Timestamp", "Ocupacion", "ExtraTreesRegressor", "RandomForestRegressor",
+                                      "XGBRegressor", "ErrorExtraTreesRegressor", "ErrorRandomForestRegressor",
+                                      "ErrorXGBRegressor"])
+
 predDataframe["Timestamp"] = pd.to_datetime(predDataframe["Timestamp"])
 
 # Se grafican los datos para cada día.
 for date in trainingSet["Timestamp"].dt.date.unique():
     group = predDataframe.loc[predDataframe["Timestamp"].dt.date == date]
     name = date.strftime("%Y-%m-%d")
+
+    print("Graficando " + name + "...")
+    print("")
+    print(f"El error máximo de ExtraTreesRegressor es: {group['ErrorExtraTreesRegressor'].max()}")
+    print(f"El error máximo de RandomForestRegressor es: {group['ErrorRandomForestRegressor'].max()}")
+    print(f"El error máximo de XGBRegressor es: {group['ErrorXGBRegressor'].max()}")
+    print("")
+    print(f"El percentil 75 de ExtraTreesRegressor es: {np.percentile(group['ErrorExtraTreesRegressor'], 75)}")
+    print(f"El percentil 75 de RandomForestRegressor es: {np.percentile(group['ErrorRandomForestRegressor'], 75)}")
+    print(f"El percentil 75 de XGBRegressor es: {np.percentile(group['ErrorXGBRegressor'], 75)}")
+    print("")
 
     fig, ax = plt.subplots(figsize=(10, 6))
     date_form = DateFormatter("%H:%M")
@@ -50,6 +71,18 @@ for date in trainingSet["Timestamp"].dt.date.unique():
     plt.legend()
     plt.grid()
     plt.title(name)
-    plt.savefig("../figuresCrossValPred/" + name + ".jpg")
+    plt.savefig("../figuresCrossValPred/predictions/" + name + ".jpg")
+    plt.clf()
+
+    plt.plot(group["Timestamp"], group["Ocupacion"], label="Ocupacion", color="red")
+    plt.plot(group["Timestamp"], group["ErrorExtraTreesRegressor"], label="ExtraTreesRegressor", color="blue")
+    plt.plot(group["Timestamp"], group["ErrorRandomForestRegressor"], label="RandomForestRegressor", color="green")
+    plt.plot(group["Timestamp"], group["ErrorXGBRegressor"], label="XGBRegressor", color="yellow")
+    plt.xlabel("Hora")
+    plt.ylabel("Error")
+    plt.legend()
+    plt.grid()
+    plt.title(name)
+    plt.savefig("../figuresCrossValPred/error/" + name + ".jpg")
     plt.clf()
     plt.close()
