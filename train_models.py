@@ -24,7 +24,7 @@ def trainModels(path, folder):
     print("Comenzando entrenamiento de RandomForestRegressor")
 
     # Se busca la mejor combinación de hiperparámetros.
-    rfr = RandomForestRegressor()
+    rfr = RandomForestRegressor(random_state=0)
     distributionRfr = dict(n_estimators=[int(x) for x in range(100, 1000, 100)])
     clfRfr = RandomizedSearchCV(rfr, distributionRfr, random_state=0, cv=5)
     searchRfr = clfRfr.fit(X, y)
@@ -35,7 +35,7 @@ def trainModels(path, folder):
     print(f"Best param of n_estimators: {bestParamsRfr['n_estimators']}")
     print(f"R Square of RandomForestRegressor: {bestScoreRfr:0.4f}")
     print("")
-    bestEstimatorRfr = RandomForestRegressor(n_estimators=bestParamsRfr["n_estimators"])
+    bestEstimatorRfr = RandomForestRegressor(n_estimators=bestParamsRfr["n_estimators"], random_state=0)
 
     # Se entrena el modelo con la mejor combinación de hiperparámetros y todos los datos disponibles.
     modelRfr = bestEstimatorRfr.fit(X, y)
@@ -45,7 +45,7 @@ def trainModels(path, folder):
     print("Comenzando entrenamiento de ExtraTreesRegressor")
 
     # Se busca la mejor combinación de hiperparámetros.
-    etr = ExtraTreesRegressor()
+    etr = ExtraTreesRegressor(random_state=0)
     distributionEtr = dict(n_estimators=[int(x) for x in range(100, 1000, 100)])
     clfEtr = RandomizedSearchCV(etr, distributionEtr, random_state=0, cv=5)
     searchEtr = clfEtr.fit(X, y)
@@ -58,7 +58,7 @@ def trainModels(path, folder):
     print("")
 
     # Se entrena el modelo con la mejor combinación de hiperparámetros y todos los datos disponibles.
-    bestEstimatorEtr = ExtraTreesRegressor(n_estimators=bestParamsEtr["n_estimators"])
+    bestEstimatorEtr = ExtraTreesRegressor(n_estimators=bestParamsEtr["n_estimators"], random_state=0)
     modelEtr = bestEstimatorEtr.fit(X, y)
     joblib.dump(modelEtr, f"{folder}/ExtraTreesRegressor.pkl")
 
@@ -66,7 +66,7 @@ def trainModels(path, folder):
     print("Comenzando entrenamiento de XGBRegressor")
 
     # Se busca la mejor combinación de hiperparámetros.
-    xgbm = xgb.XGBRegressor()
+    xgbm = xgb.XGBRegressor(random_state=0)
     distributionXgbm = dict(eta=uniform(), max_depth=[int(x) for x in range(3, 10)], subsample=uniform())
     clfXgbm = RandomizedSearchCV(xgbm, distributionXgbm, random_state=0, cv=5)
     searchXgbm = clfXgbm.fit(X, y)
@@ -81,6 +81,6 @@ def trainModels(path, folder):
 
     # Se entrena el modelo con la mejor combinación de hiperparámetros y todos los datos disponibles.
     bestEstimatorXgbm = xgb.XGBRegressor(eta=bestParamsXgbm["eta"], max_depth=bestParamsXgbm["max_depth"],
-                                         subsample=bestParamsXgbm["subsample"])
+                                         subsample=bestParamsXgbm["subsample"], random_state=0)
     modelXgbm = bestEstimatorXgbm.fit(X, y)
     joblib.dump(modelXgbm, f"{folder}/XGBRegressor.pkl")
