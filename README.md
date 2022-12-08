@@ -35,13 +35,14 @@ Esto se debe a que la versión del paquete *LazyPredict* es incompatible con la 
 Además, para el primer entorno se recomienda la versión 3.8 de Python, mientras que para el segundo entorno se
 recomienda la versión 3.6 de Python.
 
-Una vez el entorno está listo, se debe ejecutar el script **manipulation_training_evaluation.py** para obtener los
-modelos entrenados y guardados en la carpeta *models*.
-Este script genera gráficas de las características calculadas sin procesar, las características seleccionadas y
-procesadas y las predicciones y el error de los modelos entrenados.
+Los archivos csv con los datos deben estar divididos en tres carpetas y ordenados por fecha, una para los datos BLE,
+otra para el contador de personas y una última sobre el estado de las Raspberry Pi. Estas carpetas son recibididas como
+argumentos al comienzo del script **manipulation_training_evaluation.py**
 
-Los archivos csv con los datos deben estar divididos en tres carpetas y ordenados por fecha, una para los datos BLE, otra
-para el contador de personas y una última sobre el estado de las Raspberry Pi.
+Una vez el entorno está listo, se debe ejecutar el script **manipulation_training_evaluation.py** para obtener los
+modelos entrenados y guardados en la carpeta que se le indique como argumento.
+Este script genera gráficas y las guarda en la ruta indicada como argumento de las características calculadas sin
+procesar, las características seleccionadas y procesadas y las predicciones y el error de los modelos entrenados.
 
 Por último, se debe ejecutar el script **cross_validation_graph.py** para obtener las predicciones de los modelos
 entrenados en cada fold y graficarlas.
