@@ -13,8 +13,16 @@ warnings.filterwarnings("ignore")
 def testModels(pathTestSet, pathExtraTree, pathXGB, pathRandomForest, folder):
     """Funcioón que carga los modelos entrenados y los aplica al conjunto de test."""
 
+    folder = Path(folder)
     if not os.path.exists(folder):
-        os.mkdir(folder)
+        folder.mkdir(parents=True)
+
+    pathPred = Path(folder, "prediction")
+    pathError = Path(folder, "error")
+    if not os.path.exists(pathPred):
+        pathPred.mkdir(parents=True)
+    if not os.path.exists(pathError):
+        pathError.mkdir(parents=True)
 
     # Cargamos los datos.
     testSet = pd.read_csv(pathTestSet, sep=";")

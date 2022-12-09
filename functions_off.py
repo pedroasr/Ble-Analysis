@@ -70,7 +70,7 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath):
     # se rellena con valores nulos para tener el mismo número de intervalos temporales que los datos BLE.
     for file in personCountPath.iterdir():
         personCount = pd.read_csv(file, sep=';')
-        personCount.insert(0, "Timestamp", personCount.Fecha.str.cat(personCount.Hora, sep=" "))
+        personCount["Timestamp"] = personCount["Fecha"] + " " + personCount["Hora"]
         personCount.drop(columns=["Fecha", "Hora"], inplace=True)
         personCount["Timestamp"] = pd.to_datetime(personCount["Timestamp"], dayfirst=True)
 
@@ -87,9 +87,9 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath):
 
         # Se rellena los intervalos fuera de la ventana de estudio con valores nulos.
         day = personCount.index.date[0].strftime(format="%Y-%m-%d")
-        personCount = setDateTimeLimits(personCount, [np.nan, 0], day)
-        personCount = personCount.resample("5T").asfreq()
         personCount = personCount.loc[:, "Ocupacion"]
+        personCount = setDateTimeLimits(personCount, np.nan, day, False)
+        personCount = personCount.resample("5T").asfreq()
 
         personCountArray.append(personCount)
 
@@ -438,13 +438,13 @@ def savePlotColumns(data, path, categoryName):
 
     day = data["Timestamp"].iloc[0].date().strftime('%Y-%m-%d')
     imgFolder = pathlib.Path(path, categoryName, day)
+    if not os.path.exists(imgFolder):
+        imgFolder.mkdir(parents=True)
 
     # Para cada columna del Dataframe pasado como argumento, se grafica en comparación de la ocupación en función del tiempo.
     for i in range(3, len(data.columns)):
         name = data.columns[i]
         imgName = data.columns[i] + ".jpg"
-        if not os.path.exists(imgFolder):
-            os.mkdir(imgFolder)
 
         fig, ax = plt.subplots(figsize=(10, 6))
         date_form = DateFormatter("%H:%M")
@@ -484,11 +484,11 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path1, pat
     acumulados hasta ese momento"""
 
     if not os.path.exists(path1):
-        os.mkdir(path1)
+        path1.mkdir(parents=True)
     if not os.path.exists(path2):
-        os.mkdir(path2)
+        path2.mkdir(parents=True)
     if not os.path.exists(path3):
-        os.mkdir(path3)
+        path3.mkdir(parents=True)
 
     # Columnas calculadas a partir de los datos de entrada.
     columns = ["Timestamp", "Ocupacion", "Minutes", "N MAC TOTAL", "N MAC RA", "N MAC RB", "N MAC RC", "N MAC RD",
@@ -578,7 +578,7 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path1, pat
         timestamp = timestamp.index.strftime('%Y-%m-%d %H:%M:%S')
 
         # Se crea el dataframe con las columnas calculadas.
-        dataSet = np.array(np.transpose([timestamp, personCount["Ocupacion"].values, minutes, totalMAC,
+        dataSet = np.array(np.transpose([timestamp, personCount.values, minutes, totalMAC,
                                          totalMACRA,
                                          totalMACRB,
                                          totalMACRC, totalMACRD, totalMACRE, totalMACRDE, totalMACRCE,

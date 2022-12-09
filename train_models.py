@@ -17,9 +17,10 @@ def trainModels(path, folder):
 
     # Carga de datos.
     trainingSet = pd.read_csv(path, sep=";")
+    folder = Path(folder)
 
     if not os.path.exists(folder):
-        os.mkdir(folder)
+        folder.mkdir(parents=True)
 
     # Separación de datos.
     X = trainingSet.loc[:, (trainingSet.columns != "Timestamp") & (trainingSet.columns != "Ocupacion")]
