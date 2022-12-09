@@ -1,4 +1,5 @@
 import pandas as pd
+from pathlib import Path
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.dates import DateFormatter
@@ -8,6 +9,14 @@ import xgboost as xgb
 import warnings
 
 warnings.filterwarnings("ignore")
+
+path1 = Path("../figuresCrossValPred/prueba/predictions")
+path2 = Path("../figuresCrossValPred/prueba/error")
+
+if not path1.exists():
+    path1.mkdir(parents=True)
+if not path2.exists():
+    path2.mkdir(parents=True)
 
 # Carga de datos.
 trainingSet = pd.read_csv("../docs/filled-training-set.csv", sep=";")
@@ -71,7 +80,7 @@ for date in trainingSet["Timestamp"].dt.date.unique():
     plt.legend()
     plt.grid()
     plt.title(name)
-    plt.savefig("../figuresCrossValPred/predictions/" + name + ".jpg")
+    plt.savefig(Path(path1, name + ".jpg"))
     plt.clf()
 
     plt.plot(group["Timestamp"], group["Ocupacion"], label="Ocupacion", color="red")
@@ -83,6 +92,6 @@ for date in trainingSet["Timestamp"].dt.date.unique():
     plt.legend()
     plt.grid()
     plt.title(name)
-    plt.savefig("../figuresCrossValPred/error/" + name + ".jpg")
+    plt.savefig(Path(path2, name + ".jpg"))
     plt.clf()
     plt.close()
