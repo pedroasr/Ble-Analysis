@@ -10,8 +10,8 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-path1 = Path("../figuresCrossValPred/prueba/predictions")
-path2 = Path("../figuresCrossValPred/prueba/error")
+path1 = Path("../figures/CrossValPred/predictions")
+path2 = Path("../figures/CrossValPred/error")
 
 if not path1.exists():
     path1.mkdir(parents=True)
@@ -19,7 +19,7 @@ if not path2.exists():
     path2.mkdir(parents=True)
 
 # Carga de datos.
-trainingSet = pd.read_csv("../docs/filled-training-set.csv", sep=";")
+trainingSet = pd.read_csv("../results/training/filled-training-set.csv", sep=";")
 trainingSet["Timestamp"] = pd.to_datetime(trainingSet["Timestamp"])
 dates = trainingSet["Timestamp"].dt.strftime('%Y-%m-%d %H:%M:%S')
 

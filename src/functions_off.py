@@ -437,7 +437,7 @@ def savePlotColumns(data, path, categoryName):
     """Función que guarda en una carpeta las gráficas para cada una de las columnas del training set."""
 
     day = data["Timestamp"].iloc[0].date().strftime('%Y-%m-%d')
-    imgFolder = pathlib.Path(path, categoryName, day)
+    imgFolder = pathlib.Path("../figures", path, categoryName, day)
     if not os.path.exists(imgFolder):
         imgFolder.mkdir(parents=True)
 
@@ -483,12 +483,10 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path1, pat
     """Función que devuelve un conjunto de datos para el algoritmo de Machine Learning y un dataframe con los valores
     acumulados hasta ese momento"""
 
+    path1 = pathlib.Path(path1)
+
     if not os.path.exists(path1):
         path1.mkdir(parents=True)
-    if not os.path.exists(path2):
-        path2.mkdir(parents=True)
-    if not os.path.exists(path3):
-        path3.mkdir(parents=True)
 
     # Columnas calculadas a partir de los datos de entrada.
     columns = ["Timestamp", "Ocupacion", "Minutes", "N MAC TOTAL", "N MAC RA", "N MAC RB", "N MAC RC", "N MAC RD",
@@ -614,6 +612,10 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path1, pat
     name1 = categoryName + "-set.csv"
     name2 = "filter-" + categoryName + "-set.csv"
     name3 = "filled-" + categoryName + "-set.csv"
+
+    path1 = pathlib.Path(path1, categoryName)
+    if not os.path.exists(path1):
+        os.makedirs(path1)
 
     # Se guardan los datos en archivos csv.
     rawDataSet.to_csv(pathlib.Path(path1, name1), sep=";", na_rep="NaN", index=False)

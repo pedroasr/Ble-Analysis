@@ -6,7 +6,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # Carga de datos.
-trainingSet = pd.read_csv("../docs/filled-training-set.csv", sep=";")
+trainingSet = pd.read_csv("../results/training/filled-training-set.csv", sep=";")
 
 # División de datos.
 X = trainingSet.loc[:, (trainingSet.columns != "Timestamp") & (trainingSet.columns != "Ocupacion")]

@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore")
 def testModels(pathTestSet, pathExtraTree, pathXGB, pathRandomForest, folder):
     """Funcioón que carga los modelos entrenados y los aplica al conjunto de test."""
 
-    folder = Path(folder)
+    folder = Path("../figures", folder)
     if not os.path.exists(folder):
         folder.mkdir(parents=True)
 
