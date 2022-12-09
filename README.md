@@ -29,9 +29,8 @@ Existen 6 archivos principales agrupados en la carpeta *src*:
 ## Ejecución del código
 
 Los scripts funcionan correctamente con la versión 3.9 de Python. La lista con los paquetes y sus versiones instalados
-están
-detallados en el archivo **ocupacion.yml**. Este archivo se puede usar para crear un entorno virtual con todos los
-paquetes necesarios para ejecutar el código. Simplemente con este comando:
+están detallados en el archivo **ocupacion.yml** en la raíz del repositorio. Este archivo se puede usar para crear un
+entorno virtual con todos los paquetes necesarios para ejecutar el código. Simplemente con este comando:
 
 ```bash
 conda env create -f ocupacion.yml
