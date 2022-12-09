@@ -12,9 +12,9 @@ dataListTest, personCountListTest, stateListTest = readAndPrepareDataFromDirecto
                                                                                    "../docs/state_test")
 
 # Se procesan los datos hasta obtener los conjuntos de entrenamiento y test.
-getDataset(dataListTrain, personCountListTrain, stateListTrain, "training")
+getDataset(dataListTrain, personCountListTrain, stateListTrain, "training", "../docs", "../figures", "../figuresFilled")
 
-getDataset(dataListTest, personCountListTest, stateListTest, "test")
+getDataset(dataListTest, personCountListTest, stateListTest, "test", "../docs", "../figures", "../figuresFilled")
 
 # Se entrenan los modelos y se evaluan los resultados.
 trainModels("../docs/filled-training-set.csv", "../models")

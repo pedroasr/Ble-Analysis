@@ -1,5 +1,7 @@
+import os
 import pandas as pd
 import joblib
+from pathlib import Path
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.ensemble import ExtraTreesRegressor, RandomForestRegressor
 import xgboost as xgb
@@ -15,6 +17,9 @@ def trainModels(path, folder):
 
     # Carga de datos.
     trainingSet = pd.read_csv(path, sep=";")
+
+    if not os.path.exists(folder):
+        os.mkdir(folder)
 
     # Separación de datos.
     X = trainingSet.loc[:, (trainingSet.columns != "Timestamp") & (trainingSet.columns != "Ocupacion")]
@@ -39,7 +44,8 @@ def trainModels(path, folder):
 
     # Se entrena el modelo con la mejor combinación de hiperparámetros y todos los datos disponibles.
     modelRfr = bestEstimatorRfr.fit(X, y)
-    joblib.dump(modelRfr, f"{folder}/RandomForestRegressor.pkl")
+    path1 = Path(folder, "RandomForestRegressor.pkl")
+    joblib.dump(modelRfr, path1)
 
     # Segunda opción de estimador -- ExtraTreesRegressor
     print("Comenzando entrenamiento de ExtraTreesRegressor")
@@ -60,7 +66,8 @@ def trainModels(path, folder):
     # Se entrena el modelo con la mejor combinación de hiperparámetros y todos los datos disponibles.
     bestEstimatorEtr = ExtraTreesRegressor(n_estimators=bestParamsEtr["n_estimators"], random_state=0)
     modelEtr = bestEstimatorEtr.fit(X, y)
-    joblib.dump(modelEtr, f"{folder}/ExtraTreesRegressor.pkl")
+    path2 = Path(folder, "ExtraTreesRegressor.pkl")
+    joblib.dump(modelEtr, path2)
 
     # Tercera opción de estimador -- XGBRegressor
     print("Comenzando entrenamiento de XGBRegressor")
@@ -83,4 +90,5 @@ def trainModels(path, folder):
     bestEstimatorXgbm = xgb.XGBRegressor(eta=bestParamsXgbm["eta"], max_depth=bestParamsXgbm["max_depth"],
                                          subsample=bestParamsXgbm["subsample"], random_state=0)
     modelXgbm = bestEstimatorXgbm.fit(X, y)
-    joblib.dump(modelXgbm, f"{folder}/XGBRegressor.pkl")
+    path3 = Path(folder, "XGBRegressor.pkl")
+    joblib.dump(modelXgbm, path3)

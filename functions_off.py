@@ -437,15 +437,12 @@ def savePlotColumns(data, path, categoryName):
     """Función que guarda en una carpeta las gráficas para cada una de las columnas del training set."""
 
     day = data["Timestamp"].iloc[0].date().strftime('%Y-%m-%d')
-    folder = path + categoryName + "/"
-    if not os.path.exists(folder):
-        os.mkdir(folder)
-
-    imgFolder = folder + day + "/"
+    imgFolder = pathlib.Path(path, categoryName, day)
 
     # Para cada columna del Dataframe pasado como argumento, se grafica en comparación de la ocupación en función del tiempo.
     for i in range(3, len(data.columns)):
         name = data.columns[i]
+        imgName = data.columns[i] + ".jpg"
         if not os.path.exists(imgFolder):
             os.mkdir(imgFolder)
 
@@ -459,7 +456,7 @@ def savePlotColumns(data, path, categoryName):
         plt.legend()
         plt.title(name)
         plt.grid()
-        plt.savefig(imgFolder + name + '.jpg')
+        plt.savefig(pathlib.Path(imgFolder, imgName))
         plt.clf()
         plt.close()
 
@@ -482,9 +479,16 @@ def fillSet(data, dates):
     return filledSet
 
 
-def getDataset(dataArray, personCountArray, stateArray, name):
+def getDataset(dataArray, personCountArray, stateArray, categoryName, path1, path2, path3):
     """Función que devuelve un conjunto de datos para el algoritmo de Machine Learning y un dataframe con los valores
     acumulados hasta ese momento"""
+
+    if not os.path.exists(path1):
+        os.mkdir(path1)
+    if not os.path.exists(path2):
+        os.mkdir(path2)
+    if not os.path.exists(path3):
+        os.mkdir(path3)
 
     # Columnas calculadas a partir de los datos de entrada.
     columns = ["Timestamp", "Ocupacion", "Minutes", "N MAC TOTAL", "N MAC RA", "N MAC RB", "N MAC RC", "N MAC RD",
@@ -594,7 +598,7 @@ def getDataset(dataArray, personCountArray, stateArray, name):
         rawDataSet = pd.concat([rawDataSet, dataSet], ignore_index=True)
 
         print("Guardando gráficas de los datos calculados de la fecha " + day + "...")
-        savePlotColumns(dataSet, "../figures/", name)
+        savePlotColumns(dataSet, path2, categoryName)
 
         # Se concatena el Dataframe creado al Dataframe que contiene los datos resumidos.
         filterSet = dataSet[columnsFilter]
@@ -605,11 +609,15 @@ def getDataset(dataArray, personCountArray, stateArray, name):
         filledDataSet = pd.concat([filledDataSet, filledSet], ignore_index=True)
 
         print("Guardando gráficas de los datos limpios de la fecha " + day + "...")
-        savePlotColumns(filledSet, "../figuresFilled/", name)
+        savePlotColumns(filledSet, path3, categoryName)
+
+    name1 = categoryName + "-set.csv"
+    name2 = "filter-" + categoryName + "-set.csv"
+    name3 = "filled-" + categoryName + "-set.csv"
 
     # Se guardan los datos en archivos csv.
-    rawDataSet.to_csv("../docs/" + name + "-set.csv", sep=";", na_rep="NaN", index=False)
-    filterDataSet.to_csv("../docs/filter-" + name + "-set.csv", sep=";", na_rep="NaN", index=False)
-    filledDataSet.to_csv("../docs/filled-" + name + "-set.csv", sep=";", na_rep="NaN", index=False)
+    rawDataSet.to_csv(pathlib.Path(path1, name1), sep=";", na_rep="NaN", index=False)
+    filterDataSet.to_csv(pathlib.Path(path1, name2), sep=";", na_rep="NaN", index=False)
+    filledDataSet.to_csv(pathlib.Path(path1, name3), sep=";", na_rep="NaN", index=False)
 
     return rawDataSet, filterDataSet, filledDataSet

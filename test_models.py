@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import joblib
@@ -10,6 +12,9 @@ warnings.filterwarnings("ignore")
 
 def testModels(pathTestSet, pathExtraTree, pathXGB, pathRandomForest, folder):
     """Funcioón que carga los modelos entrenados y los aplica al conjunto de test."""
+
+    if not os.path.exists(folder):
+        os.mkdir(folder)
 
     # Cargamos los datos.
     testSet = pd.read_csv(pathTestSet, sep=";")
@@ -62,7 +67,8 @@ def testModels(pathTestSet, pathExtraTree, pathXGB, pathRandomForest, folder):
         plt.legend()
         plt.grid()
         plt.title(name)
-        plt.savefig(f"{folder}/prediction/" + name + ".jpg")
+        path1 = Path(folder, "prediction", name + ".jpg")
+        plt.savefig(path1)
         plt.clf()
         plt.close()
 
@@ -75,6 +81,7 @@ def testModels(pathTestSet, pathExtraTree, pathXGB, pathRandomForest, folder):
         plt.legend()
         plt.grid()
         plt.title(name)
-        plt.savefig(f"{folder}/error/" + name + ".jpg")
+        path2 = Path(folder, "error", name + ".jpg")
+        plt.savefig(path2)
         plt.clf()
         plt.close()
