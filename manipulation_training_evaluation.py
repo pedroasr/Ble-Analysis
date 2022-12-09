@@ -13,12 +13,12 @@ dataListTest, personCountListTest, stateListTest = readAndPrepareDataFromDirecto
                                                                                    "../docs/state_test")
 
 # Se procesan los datos hasta obtener los conjuntos de entrenamiento y test.
-getDataset(dataListTrain, personCountListTrain, stateListTrain, "training", "../docs/prueba", "../figures/prueba", "../figuresFilled/prueba")
+getDataset(dataListTrain, personCountListTrain, stateListTrain, "training", "../docs", "../figures", "../figuresFilled")
 
-getDataset(dataListTest, personCountListTest, stateListTest, "test", "../docs/prueba", "../figures/prueba", "../figuresFilled/prueba")
+getDataset(dataListTest, personCountListTest, stateListTest, "test", "../docs", "../figures", "../figuresFilled")
 
 # Se entrenan los modelos y se evaluan los resultados.
-trainModels("../docs/prueba/filled-training-set.csv", "../models/prueba")
+trainModels("../docs/filled-training-set.csv", "../models")
 
-testModels("../docs/prueba/filled-test-set.csv", "../models/prueba/ExtraTreesRegressor.pkl", "../models/prueba/XGBRegressor.pkl",
-           "../models/prueba/RandomForestRegressor.pkl", "../figuresTest/prueba")
+testModels("../docs/filled-test-set.csv", "../models/ExtraTreesRegressor.pkl", "../models/XGBRegressor.pkl",
+           "../models/RandomForestRegressor.pkl", "../figuresTest")
