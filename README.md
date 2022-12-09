@@ -5,7 +5,7 @@ hasta conseguir un Set de datos final, entrenamiento de algoritmos de Machine Le
 
 ## Estructura del repositorio
 
-Existen 6 archivos principales:
+Existen 6 archivos principales agrupados en la carpeta *src*:
 
 - **funtions_off.py**: Archivo que contiene las funciones de preprocesamiento de los datos. Desde la carga de los datos
   en
@@ -28,21 +28,25 @@ Existen 6 archivos principales:
 
 ## Ejecución del código
 
-Para ejecutar los scripts, se recomienda hacer uso de dos entornos diferentes, uno para la selección de los mejores
-algoritmos y otro para el resto de los scripts.
-Esto se debe a que la versión del paquete *LazyPredict* es incompatible con la versión del resto de paquetes (*pandas*,
-*numpy*, *scipy*, etc.) utilizados en el resto de los scripts.
-Además, para el primer entorno se recomienda la versión 3.8 de Python, mientras que para el segundo entorno se
-recomienda la versión 3.6 de Python.
+Los scripts funcionan correctamente con la versión 3.9 de Python. La lista con los paquetes y sus versiones instalados
+están
+detallados en el archivo **environment.yml**. Este archivo se puede usar para crear un entorno virtual con todos los
+paquetes necesarios para ejecutar el código. Simplemente con este comando:
 
-Los archivos csv con los datos deben estar divididos en tres carpetas y ordenados por fecha, una para los datos BLE,
-otra para el contador de personas y una última sobre el estado de las Raspberry Pi. Estas carpetas son recibididas como
-argumentos al comienzo del script **manipulation_training_evaluation.py**
+```bash
+conda env create -f environment.yml
+```
+
+Los archivos csv con los datos deben estar divididos en tres carpetas y ordenados por fecha dentro de una carpeta
+general llamada *data*, una para los datos BLE, otra para el contador de personas y una última sobre el estado de las
+Raspberry Pi. Además, existen otras tres carpetas con la misma función albergando los datos usados para test. Estas
+carpetas son recibididas como argumentos al comienzo del script **manipulation_training_evaluation.py**
 
 Una vez el entorno está listo, se debe ejecutar el script **manipulation_training_evaluation.py** para obtener los
 modelos entrenados y guardados en la carpeta que se le indique como argumento.
-Este script genera gráficas y las guarda en la ruta indicada como argumento de las características calculadas sin
-procesar, las características seleccionadas y procesadas y las predicciones y el error de los modelos entrenados.
+Este script genera gráficas y las guarda en la ruta *figures* con la etiqueta indicada como argumento de las
+características calculadas sin procesar, las características seleccionadas y procesadas y las predicciones y el error de
+los modelos entrenados.
 
 Por último, se debe ejecutar el script **cross_validation_graph.py** para obtener las predicciones de los modelos
 entrenados en cada fold y graficarlas.
