@@ -30,11 +30,11 @@ Existen 6 archivos principales agrupados en la carpeta *src*:
 
 Los scripts funcionan correctamente con la versión 3.9 de Python. La lista con los paquetes y sus versiones instalados
 están
-detallados en el archivo **environment.yml**. Este archivo se puede usar para crear un entorno virtual con todos los
+detallados en el archivo **ocupacion.yml**. Este archivo se puede usar para crear un entorno virtual con todos los
 paquetes necesarios para ejecutar el código. Simplemente con este comando:
 
 ```bash
-conda env create -f environment.yml
+conda env create -f ocupacion.yml
 ```
 
 Los archivos csv con los datos deben estar divididos en tres carpetas y ordenados por fecha dentro de una carpeta
