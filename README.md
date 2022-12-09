@@ -40,7 +40,7 @@ conda env create -f environment.yml
 Los archivos csv con los datos deben estar divididos en tres carpetas y ordenados por fecha dentro de una carpeta
 general llamada *data*, una para los datos BLE, otra para el contador de personas y una última sobre el estado de las
 Raspberry Pi. Además, existen otras tres carpetas con la misma función albergando los datos usados para test. Estas
-carpetas son recibididas como argumentos al comienzo del script **manipulation_training_evaluation.py**
+carpetas son recibidas como argumentos al comienzo del script **manipulation_training_evaluation.py**
 
 Una vez el entorno está listo, se debe ejecutar el script **manipulation_training_evaluation.py** para obtener los
 modelos entrenados y guardados en la carpeta que se le indique como argumento.
