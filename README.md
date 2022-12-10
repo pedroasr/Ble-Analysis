@@ -5,7 +5,7 @@ hasta conseguir un Set de datos final, entrenamiento de algoritmos de Machine Le
 
 ## Estructura del repositorio
 
-Existen 6 archivos principales agrupados en la carpeta *src*:
+Existen 7 archivos principales agrupados en la carpeta *src*:
 
 - **clean_BLE_data**: Archivo que contiene la función que limpia los datos de los archivos ble brutos y guarda los datos
   en archivos .csv
