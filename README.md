@@ -41,7 +41,7 @@ albergando los datos usados para la evaluación. Estas carpetas son recibidas co
 **manipulation_training_evaluation.py**. Todos los archivos almacenados en estas carpetas deben pertenecer a los mismos
 días que se quieren procesar, de otro modo el script dará error. En el script **manipulation_training_evaluation.py** se
 deben indicar la ruta de todas las carpetas y archivos necesarios para su ejecución. Una vez configurado esto, el script
-se ejecuta de la suiguiente manera:
+se ejecuta de la siguiente manera:
 
 ```bash
 python3 manipulation_training_evaluation.py
