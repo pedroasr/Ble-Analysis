@@ -8,8 +8,7 @@ hasta conseguir un Set de datos final, entrenamiento de algoritmos de Machine Le
 Existen 7 archivos principales agrupados en la carpeta *src*:
 
 - **clean_BLE_data.py**: Archivo que contiene la función que limpia los datos de los archivos ble brutos y guarda los
-  datos
-  en archivos .csv
+  datos en archivos .csv
 - **funtions_off.py**: Archivo que contiene las funciones de preprocesamiento de los datos. Desde la carga de los datos
   en bruto hasta la obtención de los datos finales.
 - **select_algorithm_lazy.py**: Archivo que usando la librería *LazyPredict*, realiza una comparativa de los algoritmos
