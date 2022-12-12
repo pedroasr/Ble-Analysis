@@ -1,4 +1,3 @@
-import os
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -31,7 +30,7 @@ def cleanBLEData(dataPath, macList, sampling, tag):
 
         # Se añade columna Timestamp.
         dataBle["Timestamp"] = pd.to_datetime(dataBle["Fecha"] + " " + dataBle["Hora"], dayfirst=True)
-        day = dataBle["Timestamp"][0].date().strftime("%Y-%m-%d")
+        day = dataBle["Timestamp"].iloc[0].date().strftime("%Y-%m-%d")
         initDate = dataBle["Timestamp"].min()
         endDate = dataBle["Timestamp"].max()
         dataBle["Mensajes"] = 1
@@ -74,7 +73,7 @@ def cleanBLEData(dataPath, macList, sampling, tag):
 
         # Si no existe el directorio de salida, se crea.
         path = Path("../results", tag)
-        if not os.path.exists(path):
+        if not path.exists():
             path.mkdir(parents=True)
 
         # Se guarda el dataframe en un archivo CSV.

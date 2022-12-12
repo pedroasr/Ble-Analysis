@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -14,14 +13,14 @@ def valModels(pathTestSet, pathExtraTree, pathXGB, pathRandomForest, folder):
     """Función que carga los modelos entrenados y los aplica al conjunto de test."""
 
     folder = Path("../figures", folder)
-    if not os.path.exists(folder):
+    if not folder.exists():
         folder.mkdir(parents=True)
 
     pathPred = Path(folder, "prediction")
     pathError = Path(folder, "error")
-    if not os.path.exists(pathPred):
+    if not pathPred.exists():
         pathPred.mkdir(parents=True)
-    if not os.path.exists(pathError):
+    if not pathError.exists():
         pathError.mkdir(parents=True)
 
     # Cargamos los datos.

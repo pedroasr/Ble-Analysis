@@ -1,4 +1,3 @@
-import os
 import pandas as pd
 import joblib
 from pathlib import Path
@@ -19,7 +18,7 @@ def trainModels(path, folder="../models"):
     trainingSet = pd.read_csv(path, sep=";")
     folder = Path(folder)
 
-    if not os.path.exists(folder):
+    if not folder.exists():
         folder.mkdir(parents=True)
 
     # Separación de datos.

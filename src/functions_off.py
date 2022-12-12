@@ -1,4 +1,3 @@
-import os
 import numpy as np
 import pandas as pd
 import pathlib
@@ -438,7 +437,7 @@ def savePlotColumns(data, path, categoryName):
 
     day = data["Timestamp"].iloc[0].date().strftime('%Y-%m-%d')
     imgFolder = pathlib.Path("../figures", path, categoryName, day)
-    if not os.path.exists(imgFolder):
+    if not imgFolder.exists():
         imgFolder.mkdir(parents=True)
 
     # Para cada columna del Dataframe pasado como argumento, se grafica en comparación de la ocupación en función del tiempo.
@@ -485,7 +484,7 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
 
     path1 = pathlib.Path(path1)
 
-    if not os.path.exists(path1):
+    if not path1.exists():
         path1.mkdir(parents=True)
 
     # Columnas calculadas a partir de los datos de entrada.
@@ -614,8 +613,8 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
     name3 = "filled-" + categoryName + "-set.csv"
 
     path1 = pathlib.Path(path1, categoryName)
-    if not os.path.exists(path1):
-        os.makedirs(path1)
+    if not path1.exists():
+        path1.mkdir(parents=True)
 
     # Se guardan los datos en archivos csv.
     rawDataSet.to_csv(pathlib.Path(path1, name1), sep=";", na_rep="NaN", index=False)
