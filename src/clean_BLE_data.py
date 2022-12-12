@@ -36,10 +36,8 @@ def cleanBLEData(dataPath, macList, sampling, tag):
         dataBle["Mensajes"] = 1
 
         # Lista con todos los Timestamps posibles, añadiendoles índice.
-        fullDateList = list(enumerate(
-            pd.date_range(start=dataBle["Timestamp"].iloc[0].date().strftime("%Y-%m-%d") + " 07:00:00",
-                          end=dataBle["Timestamp"].iloc[-1].date().strftime("%Y-%m-%d") + " 22:00:00",
-                          freq=str(sampling) + "T")))
+        fullDateList = list(
+            enumerate(pd.date_range(start=day + " 07:00:00", end=day + " 22:00:00", freq=str(sampling) + "T")))
 
         # Filtrado para obtener los Timestamps coincidentes con los datos
         dateList = np.array([x for x in fullDateList if initDate <= x[1] <= endDate])
