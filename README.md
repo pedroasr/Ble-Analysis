@@ -43,11 +43,14 @@ albergando los datos usados para la evaluación. Estas carpetas son recibidas co
 
 Una vez el entorno está listo, se debe ejecutar el script **manipulation_training_evaluation.py** para limpiar los datos
 en bruto y obtener los modelos entrenados y guardados en la carpeta que se le indique como argumento, por defecto será
-*models*. Existe una
-variable llamada *sampling* que indica el intervalo de tiempo en el que se van a agrupar los datos. Los datos procesados
-se guardan en la carpeta *results*, en el directorio con la etiqueta pasada como argumento. Este script genera
-gráficas y las guarda en la ruta *figures* con la etiqueta indicada como argumento de las características calculadas sin
-procesar, las características seleccionadas y procesadas y las predicciones y el error de los modelos entrenados.
+*models*. Existe una variable llamada *sampling* que indica el intervalo de tiempo en el que se van a agrupar los datos.
+Los datos procesados se guardan en la carpeta *results*, en el directorio con la etiqueta pasada como argumento. Este
+script genera gráficas y las guarda en la ruta *figures* con la etiqueta indicada como argumento de las características
+calculadas sin procesar, las características seleccionadas y procesadas y las predicciones y el error de los modelos
+entrenados.
+
+Para obtener los mejores algoritmos para los datos procesados usando la librería *LazyPredict*, se debe ejecutar el
+script **select_algoritm_lazy.py**.
 
 Por último, se debe ejecutar el script **cross_validation_graph.py** para obtener las predicciones de los modelos
 entrenados en cada fold y graficarlas.
