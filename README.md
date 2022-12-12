@@ -49,7 +49,7 @@ calculadas sin procesar, las características seleccionadas y procesadas y las p
 entrenados.
 
 Para obtener los mejores algoritmos para los datos procesados usando la librería *LazyPredict*, se debe ejecutar el
-script **select_algoritm_lazy.py**.
+script **select_algorithm_lazy.py**.
 
 Por último, se debe ejecutar el script **cross_validation_graph.py** para obtener las predicciones de los modelos
 entrenados en cada fold y graficarlas.
