@@ -11,7 +11,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def trainModels(path, folder):
+def trainModels(path, folder="../models"):
     """Función que carga los datos de aprendizaje, busca los mejores hiperparámetros para cada modelo y los guarda en la
     carpeta destino."""
 

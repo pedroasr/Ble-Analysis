@@ -479,7 +479,7 @@ def fillSet(data, dates, sampling):
     return filledSet
 
 
-def getDataset(dataArray, personCountArray, stateArray, categoryName, path1, path2, path3, sampling):
+def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, path3, sampling, path1="../results"):
     """Función que devuelve un conjunto de datos para el algoritmo de Machine Learning y un dataframe con los valores
     acumulados hasta ese momento"""
 

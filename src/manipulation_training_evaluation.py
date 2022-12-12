@@ -21,13 +21,13 @@ dataListVal, personCountListVal, stateListVal = readAndPrepareDataFromDirectory(
                                                                                 "../data/state_validation", sampling)
 
 # Se procesan los datos hasta obtener los conjuntos de entrenamiento y test.
-getDataset(dataListTrain, personCountListTrain, stateListTrain, "learning", "../results", "Full", "Training", sampling)
+getDataset(dataListTrain, personCountListTrain, stateListTrain, "learning", "Full", "Training", sampling)
 
-getDataset(dataListVal, personCountListVal, stateListVal, "validation", "../results", "Full", "Training", sampling)
+getDataset(dataListVal, personCountListVal, stateListVal, "validation", "Full", "Training", sampling)
 
 # Se entrenan los modelos y se evaluan los resultados.
-trainModels("../results/learning/filled-training-set.csv", "../models")
+trainModels("../results/learning/filled-learning-set.csv")
 
-valModels("../results/validation/filled-test-set.csv", "../models/ExtraTreesRegressor.pkl",
+valModels("../results/validation/filled-validation-set.csv", "../models/ExtraTreesRegressor.pkl",
           "../models/XGBRegressor.pkl",
           "../models/RandomForestRegressor.pkl", "Validation")

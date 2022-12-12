@@ -19,7 +19,7 @@ if not path2.exists():
     path2.mkdir(parents=True)
 
 # Carga de datos.
-trainingSet = pd.read_csv("../results/training/filled-training-set.csv", sep=";")
+trainingSet = pd.read_csv("../results/learning/filled-learning-set.csv", sep=";")
 trainingSet["Timestamp"] = pd.to_datetime(trainingSet["Timestamp"])
 dates = trainingSet["Timestamp"].dt.strftime('%Y-%m-%d %H:%M:%S')
 
