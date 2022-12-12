@@ -38,15 +38,21 @@ Los archivos csv con los datos deben estar divididos en tres carpetas y ordenado
 general llamada *data*, una para los datos BLE, otra para el contador de personas y una última sobre el estado de las
 Raspberry Pi, que servirán como datos de aprendizaje. Además, existen otras tres carpetas con la misma función
 albergando los datos usados para la evaluación. Estas carpetas son recibidas como argumentos al comienzo del script
-**manipulation_training_evaluation.py**
+**manipulation_training_evaluation.py**. Todos los archivos almacenados en estas carpetas deben pertenecer a los mismos
+días que se quieren procesar, de otro modo el script dará error. En el script **manipulation_training_evaluation.py** se
+deben indicar la ruta de todas las carpetas y archivos necesarios para su ejecución. Una vez configurado esto, el script
+se ejecuta de la suiguiente manera:
 
-Una vez el entorno está listo, se debe ejecutar el script **manipulation_training_evaluation.py** para limpiar los datos
-en bruto y obtener los modelos entrenados y guardados en la carpeta que se le indique como argumento, por defecto será
-*models*. Existe una variable llamada *sampling* que indica el intervalo de tiempo en el que se van a agrupar los datos.
-Los datos procesados se guardan en la carpeta *results*, en el directorio con la etiqueta pasada como argumento. Este
-script genera gráficas y las guarda en la ruta *figures* con la etiqueta indicada como argumento de las características
-calculadas sin procesar, las características seleccionadas y procesadas y las predicciones y el error de los modelos
-entrenados.
+```bash
+python3 manipulation_training_evaluation.py
+```
+
+El script **manipulation_training_evaluation.py** limpia los datos en bruto y obtiene los modelos entrenados y los
+guarda en la carpeta que se le indique como argumento, por defecto será *models*. Existe una variable llamada *sampling*
+que indica el intervalo de tiempo en el que se van a agrupar los datos. Los datos procesados se guardan en la carpeta
+*results*, en el directorio con la etiqueta pasada como argumento. Este script genera gráficas y las guarda en la ruta
+*figures* con la etiqueta indicada como argumento de las características calculadas sin procesar, las características
+seleccionadas y procesadas y las predicciones y el error de los modelos entrenados.
 
 Para obtener los mejores algoritmos para los datos procesados usando la librería *LazyPredict*, se debe ejecutar el
 script **select_algorithm_lazy.py**.
