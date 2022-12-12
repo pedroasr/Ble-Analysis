@@ -7,7 +7,8 @@ hasta conseguir un Set de datos final, entrenamiento de algoritmos de Machine Le
 
 Existen 7 archivos principales agrupados en la carpeta *src*:
 
-- **clean_BLE_data.py**: Archivo que contiene la función que limpia los datos de los archivos ble brutos y guarda los datos
+- **clean_BLE_data.py**: Archivo que contiene la función que limpia los datos de los archivos ble brutos y guarda los
+  datos
   en archivos .csv
 - **funtions_off.py**: Archivo que contiene las funciones de preprocesamiento de los datos. Desde la carga de los datos
   en bruto hasta la obtención de los datos finales.
@@ -36,12 +37,15 @@ conda env create -f ocupacion.yml
 
 Los archivos csv con los datos deben estar divididos en tres carpetas y ordenados por fecha dentro de una carpeta
 general llamada *data*, una para los datos BLE, otra para el contador de personas y una última sobre el estado de las
-Raspberry Pi. Además, existen otras tres carpetas con la misma función albergando los datos usados para test. Estas
-carpetas son recibidas como argumentos al comienzo del script **manipulation_training_evaluation.py**
+Raspberry Pi, que servirán como datos de aprendizaje. Además, existen otras tres carpetas con la misma función
+albergando los datos usados para la evaluación. Estas carpetas son recibidas como argumentos al comienzo del script
+**manipulation_training_evaluation.py**
 
 Una vez el entorno está listo, se debe ejecutar el script **manipulation_training_evaluation.py** para limpiar los datos
-en bruto y obtener los modelos entrenados y guardados en la carpeta que se le indique como argumento. Existe una
-variable llamada *sampling* que indica el intervalo de tiempo en el que se van a agrupar los datos. Este script genera
+en bruto y obtener los modelos entrenados y guardados en la carpeta que se le indique como argumento, por defecto será
+*models*. Existe una
+variable llamada *sampling* que indica el intervalo de tiempo en el que se van a agrupar los datos. Los datos procesados
+se guardan en la carpeta *results*, en el directorio con la etiqueta pasada como argumento. Este script genera
 gráficas y las guarda en la ruta *figures* con la etiqueta indicada como argumento de las características calculadas sin
 procesar, las características seleccionadas y procesadas y las predicciones y el error de los modelos entrenados.
 
