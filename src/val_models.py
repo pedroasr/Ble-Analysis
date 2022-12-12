@@ -10,8 +10,8 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def testModels(pathTestSet, pathExtraTree, pathXGB, pathRandomForest, folder):
-    """Funcioón que carga los modelos entrenados y los aplica al conjunto de test."""
+def valModels(pathTestSet, pathExtraTree, pathXGB, pathRandomForest, folder):
+    """Función que carga los modelos entrenados y los aplica al conjunto de test."""
 
     folder = Path("../figures", folder)
     if not os.path.exists(folder):
