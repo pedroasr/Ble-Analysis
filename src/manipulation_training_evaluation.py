@@ -29,5 +29,4 @@ getDataset(dataListVal, personCountListVal, stateListVal, "validation", "Full", 
 trainModels("../results/learning/filled-learning-set.csv")
 
 valModels("../results/validation/filled-validation-set.csv", "../models/ExtraTreesRegressor.pkl",
-          "../models/XGBRegressor.pkl",
-          "../models/RandomForestRegressor.pkl", "Validation")
+          "../models/XGBRegressor.pkl", "../models/RandomForestRegressor.pkl", "Validation")

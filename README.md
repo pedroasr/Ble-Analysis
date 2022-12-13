@@ -15,7 +15,7 @@ Existen 7 archivos principales agrupados en la carpeta *src*:
   de Machine Learning más comunes para seleccionar el mejor.
 - **train_models.py**: Archivo que contiene la función de entrenamiento de los modelos de Machine Learning, calculando
   los mejores hiperparámetros para el algoritmo.
-- **test_models.py**: Archivo que contiene la función de evaluación de los modelos de Machine Learning, calculando las
+- **val_models.py**: Archivo que contiene la función de evaluación de los modelos de Machine Learning, calculando las
   métricas de evaluación.
 - **manipulation_training_evaluation.py**: Archivo que ejecuta las funciones en los archivos anteriores para la
   manipulación de los datos de entrenamiento y evaluación, entrenamiento de los algoritmos de Machine Learning y
