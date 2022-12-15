@@ -1,5 +1,5 @@
-from clean_BLE_data import cleanBLEData
-from functions_off import readAndPrepareDataFromDirectory, getDataset
+from clean_ble_data import cleanBLEData
+from manipulate_ble_data import readAndPrepareDataFromDirectory, getDataset
 from train_models import trainModels
 from val_models import valModels
 

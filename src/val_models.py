@@ -1,10 +1,11 @@
+import warnings
 from pathlib import Path
+
+import joblib
 import numpy as np
 import pandas as pd
-import joblib
 from matplotlib import pyplot as plt
 from matplotlib.dates import DateFormatter
-import warnings
 
 warnings.filterwarnings("ignore")
 
@@ -82,7 +83,8 @@ def valModels(pathTestSet, pathExtraTree, pathXGB, pathRandomForest, folder):
         plt.plot(data["Timestamp"], data["Ocupacion"], label="Ocupacion", color="red")
         plt.plot(data["Timestamp"], data["ErrorExtraTreesRegressor"], label="ErrorExtraTreesRegressor", color="blue")
         plt.plot(data["Timestamp"], data["ErrorXGBRegressor"], label="ErrorXGBRegressor", color="green")
-        plt.plot(data["Timestamp"], data["ErrorRandomForestRegressor"], label="ErrorRandomForestRegressor", color="yellow")
+        plt.plot(data["Timestamp"], data["ErrorRandomForestRegressor"], label="ErrorRandomForestRegressor",
+                 color="yellow")
         plt.xlabel("Hora")
         plt.ylabel("Error")
         plt.legend()

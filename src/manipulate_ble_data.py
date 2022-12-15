@@ -1,9 +1,10 @@
+import pathlib
+import warnings
+
 import numpy as np
 import pandas as pd
-import pathlib
 from matplotlib import pyplot as plt
 from matplotlib.dates import DateFormatter
-import warnings
 
 warnings.filterwarnings("ignore")
 
@@ -88,7 +89,7 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath, sampli
         day = personCount.index.date[0].strftime(format="%Y-%m-%d")
         personCount = personCount.loc[:, "Ocupacion"]
         personCount = setDateTimeLimits(personCount, np.nan, day, False)
-        personCount = personCount.resample(str(sampling)+"T").asfreq()
+        personCount = personCount.resample(str(sampling) + "T").asfreq()
 
         personCountArray.append(personCount)
 
@@ -157,7 +158,7 @@ def getTotalDevicesByRaspberry(data, state, sampling):
     # Raspberry y agrupados por Timestamp.
     for i, column in enumerate(dataArray):
         column = setDateTimeLimits(column, [0], day)
-        column = column.resample(str(sampling)+"T").asfreq().fillna(0)
+        column = column.resample(str(sampling) + "T").asfreq().fillna(0)
         column.loc[statusList[i], "MAC"] = np.nan
 
         finalDataList.append(column)
@@ -225,7 +226,7 @@ def getTotalDevicesByPairRaspberries(data, state, sampling):
         column.reset_index(inplace=True)
         column = column["Timestamp"].value_counts(sort=False)
         column = setDateTimeLimits(column, 0, day, False)
-        column = column.resample(str(sampling)+"T").asfreq().fillna(0)
+        column = column.resample(str(sampling) + "T").asfreq().fillna(0)
 
         # En función de que conjunto se esté procesando, aplican unos estados u otros.
         if i == 0:
@@ -296,7 +297,7 @@ def getTotalDeviceByMessageNumber(data, state, sampling):
         column.reset_index(inplace=True)
         column = column["Timestamp"].value_counts(sort=False)
         column = setDateTimeLimits(column, 0, day, False)
-        column = column.resample(str(sampling)+"T").asfreq().fillna(0)
+        column = column.resample(str(sampling) + "T").asfreq().fillna(0)
 
         # En función de que conjunto se esté procesando, aplican unos estados u otros.
         if i < 3:
@@ -370,7 +371,7 @@ def getTotalDevicesInPreviousInterval(data, state, sampling):
     # Se establece las fechas límite y se rellenan los huecos.
     totalMACPreviousInterval.set_index("Timestamp", inplace=True)
     totalMACPreviousInterval = setDateTimeLimits(totalMACPreviousInterval, [0], day)
-    totalMACPreviousInterval = totalMACPreviousInterval.resample(str(sampling)+"T").asfreq().fillna(0)
+    totalMACPreviousInterval = totalMACPreviousInterval.resample(str(sampling) + "T").asfreq().fillna(0)
     totalMACPreviousInterval.loc[invalidDates] = np.nan
     totalMACPreviousInterval = np.array(totalMACPreviousInterval["MAC"].values)
 
@@ -412,7 +413,8 @@ def getTotalDevicesInTwoPreviousIntervals(data, state, sampling):
 
     # En el primer y segundo instante, no es posible comparar con los anteriores, por lo que se añade un valor 0 en ambos.
     totalMACTwoPreviousInterval = pd.DataFrame(
-        [[pd.to_datetime(day + " 07:00:00"), 0], [pd.to_datetime(day + " 07:0"+str(sampling)+":00"), 0]], columns=["Timestamp", "MAC"])
+        [[pd.to_datetime(day + " 07:00:00"), 0], [pd.to_datetime(day + " 07:0" + str(sampling) + ":00"), 0]],
+        columns=["Timestamp", "MAC"])
 
     # Bucle que recorre la lista de intervalos de tiempo y compara las MAC de cada uno con los de los dos anteriores comprobando
     # coincidentes.
@@ -425,7 +427,7 @@ def getTotalDevicesInTwoPreviousIntervals(data, state, sampling):
     # Se establece las fechas límite y se rellenan los huecos.
     totalMACTwoPreviousInterval.set_index("Timestamp", inplace=True)
     totalMACTwoPreviousInterval = setDateTimeLimits(totalMACTwoPreviousInterval, [0], day)
-    totalMACTwoPreviousInterval = totalMACTwoPreviousInterval.resample(str(sampling)+"T").asfreq().fillna(0)
+    totalMACTwoPreviousInterval = totalMACTwoPreviousInterval.resample(str(sampling) + "T").asfreq().fillna(0)
     totalMACTwoPreviousInterval.loc[invalidDates] = np.nan
     totalMACTwoPreviousInterval = np.array(totalMACTwoPreviousInterval["MAC"].values)
 
@@ -468,7 +470,7 @@ def fillSet(data, dates, sampling):
 
     # Se interpolan los valores en los que sea posible.
     dataCopy.set_index("Timestamp", inplace=True)
-    filledSet = dataCopy.resample(str(sampling)+"T").mean().interpolate()
+    filledSet = dataCopy.resample(str(sampling) + "T").mean().interpolate()
 
     # En las fechas donde hubo fallos, se eliminan las filas.
     filledSet.loc[dates] = np.nan
@@ -547,14 +549,16 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
         # Se agrupa en función del Timestamp y se calculan los dispositivos únicos en cada intervalo.
         dataGroup = dataGroup.groupby("Timestamp").nunique()
         dataGroup = setDateTimeLimits(dataGroup, [np.nan, np.nan, np.nan], day)
-        dataGroup = dataGroup.resample(str(sampling)+"T").asfreq()
+        dataGroup = dataGroup.resample(str(sampling) + "T").asfreq()
         totalMAC = dataGroup["MAC"].values
 
         # Se calculan los dispositivos únicos en cada Raspberry.
-        totalMACRA, totalMACRB, totalMACRC, totalMACRD, totalMACRE = getTotalDevicesByRaspberry(data, RDownInterval, sampling)
+        totalMACRA, totalMACRB, totalMACRC, totalMACRD, totalMACRE = getTotalDevicesByRaspberry(data, RDownInterval,
+                                                                                                sampling)
 
         # Se calculan los dispositivos únicos por par y trio de Raspberry.
-        totalMACRCDE, totalMACRCE, totalMACRDE, totalMACRBE = getTotalDevicesByPairRaspberries(data, RDownInterval, sampling)
+        totalMACRCDE, totalMACRCE, totalMACRDE, totalMACRBE = getTotalDevicesByPairRaspberries(data, RDownInterval,
+                                                                                               sampling)
 
         # Se calculan los dispositivos únicos en función del número de mensajes por Raspberry.
         totalMACRA_10, totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30, totalMACRC_10, \
@@ -571,7 +575,7 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
         timestamp = data.index.unique()
         timestamp = pd.Series(np.zeros(len(timestamp)), index=timestamp, name="Timestamp")
         timestamp = setDateTimeLimits(timestamp, 0, day, False)
-        timestamp = timestamp.resample(str(sampling)+"T").asfreq()
+        timestamp = timestamp.resample(str(sampling) + "T").asfreq()
         timestamp = timestamp.index.strftime('%Y-%m-%d %H:%M:%S')
 
         # Se crea el dataframe con las columnas calculadas.
