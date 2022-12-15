@@ -1,4 +1,4 @@
-import pathlib
+from pathlib import Path
 import warnings
 
 import numpy as np
@@ -52,9 +52,9 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath, sampli
     dataArray = []
     personCountArray = []
     stateArray = []
-    dataPath = pathlib.Path(dataPath)
-    personCountPath = pathlib.Path(personCountPath)
-    statePath = pathlib.Path(statePath)
+    dataPath = Path(dataPath)
+    personCountPath = Path(personCountPath)
+    statePath = Path(statePath)
 
     # Para los datos BLE, se cargan las columnas necesarias y eliminamos MAC de señalización.
     for file in dataPath.iterdir():
@@ -438,7 +438,7 @@ def savePlotColumns(data, path, categoryName):
     """Función que guarda en una carpeta las gráficas para cada una de las columnas del training set."""
 
     day = data["Timestamp"].iloc[0].date().strftime('%Y-%m-%d')
-    imgFolder = pathlib.Path("../figures", path, categoryName, day)
+    imgFolder = Path("../figures", path, categoryName, day)
     if not imgFolder.exists():
         imgFolder.mkdir(parents=True)
 
@@ -457,7 +457,7 @@ def savePlotColumns(data, path, categoryName):
         plt.legend()
         plt.title(name)
         plt.grid()
-        plt.savefig(pathlib.Path(imgFolder, imgName))
+        plt.savefig(Path(imgFolder, imgName))
         plt.clf()
         plt.close()
 
@@ -484,7 +484,7 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
     """Función que devuelve un conjunto de datos para el algoritmo de Machine Learning y un dataframe con los valores
     acumulados hasta ese momento"""
 
-    path1 = pathlib.Path(path1)
+    path1 = Path(path1)
 
     if not path1.exists():
         path1.mkdir(parents=True)
@@ -616,13 +616,13 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
     name2 = "filter-" + categoryName + "-set.csv"
     name3 = "filled-" + categoryName + "-set.csv"
 
-    path1 = pathlib.Path(path1, categoryName)
+    path1 = Path(path1, categoryName)
     if not path1.exists():
         path1.mkdir(parents=True)
 
     # Se guardan los datos en archivos csv.
-    rawDataSet.to_csv(pathlib.Path(path1, name1), sep=";", na_rep="NaN", index=False)
-    filterDataSet.to_csv(pathlib.Path(path1, name2), sep=";", na_rep="NaN", index=False)
-    filledDataSet.to_csv(pathlib.Path(path1, name3), sep=";", na_rep="NaN", index=False)
+    rawDataSet.to_csv(Path(path1, name1), sep=";", na_rep="NaN", index=False)
+    filterDataSet.to_csv(Path(path1, name2), sep=";", na_rep="NaN", index=False)
+    filledDataSet.to_csv(Path(path1, name3), sep=";", na_rep="NaN", index=False)
 
     return rawDataSet, filterDataSet, filledDataSet
