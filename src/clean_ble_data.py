@@ -77,4 +77,4 @@ def cleanBLEData(dataPath, macList, sampling, tag):
 
         # Se guarda el dataframe en un archivo CSV.
         path = Path(path, "ble-filter-clean-P_" + day + ".csv")
-        filterData.to_csv(path, sep=';', index=False)
+        filterData.to_csv(path, sep=";", index=False)

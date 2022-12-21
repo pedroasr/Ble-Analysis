@@ -1,5 +1,5 @@
-from pathlib import Path
 import warnings
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -58,7 +58,7 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath, sampli
 
     # Para los datos BLE, se cargan las columnas necesarias y eliminamos MAC de señalización.
     for file in dataPath.iterdir():
-        data = pd.read_csv(file, sep=';', usecols=["Timestamp int.", "Raspberry", "Nº Mensajes", "MAC"])
+        data = pd.read_csv(file, sep=";", usecols=["Timestamp int.", "Raspberry", "Nº Mensajes", "MAC"])
         data["Timestamp int."] = pd.to_datetime(data["Timestamp int."], dayfirst=True)
         data = data.rename(columns={"Timestamp int.": "Timestamp"})
         data = data.drop(data[data["MAC"] == "00:00:00:00:00:00"].index).reset_index(drop=True)
@@ -69,7 +69,7 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath, sampli
     # minutos. En esta carga en el caso de generar un valor nulo, se interpola en caso de ser hora de estudio y posteiriormente,
     # se rellena con valores nulos para tener el mismo número de intervalos temporales que los datos BLE.
     for file in personCountPath.iterdir():
-        personCount = pd.read_csv(file, sep=';')
+        personCount = pd.read_csv(file, sep=";")
         personCount["Timestamp"] = personCount["Fecha"] + " " + personCount["Hora"]
         personCount.drop(columns=["Fecha", "Hora"], inplace=True)
         personCount["Timestamp"] = pd.to_datetime(personCount["Timestamp"], dayfirst=True)
@@ -95,7 +95,7 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath, sampli
 
     # Para los datos del estado de las Raspberries, se genera la columna Timestamp y se eliminan las que no son necesarias.
     for file in statePath.iterdir():
-        state = pd.read_csv(file, sep=';')
+        state = pd.read_csv(file, sep=";")
         state.insert(0, "Timestamp", state["Fecha"].str.cat(state["Hora"], sep=" "))
         state.drop(columns=["Fecha", "Hora", "Indice intervalo"], inplace=True)
         state["Timestamp"] = pd.to_datetime(state["Timestamp"], dayfirst=True)
@@ -109,11 +109,11 @@ def parseDataByRaspberry(data):
     """Función que devuelve un conjunto de datos filtrado por cada Raspberry. Devuelve un conjunto por Raspberry."""
 
     dataCopy = data.copy()
-    dataRA = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry A']
-    dataRB = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry B']
-    dataRC = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry C']
-    dataRD = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry D']
-    dataRE = dataCopy.loc[dataCopy['Raspberry'] == 'Raspberry E']
+    dataRA = dataCopy.loc[dataCopy["Raspberry"] == "Raspberry A"]
+    dataRB = dataCopy.loc[dataCopy["Raspberry"] == "Raspberry B"]
+    dataRC = dataCopy.loc[dataCopy["Raspberry"] == "Raspberry C"]
+    dataRD = dataCopy.loc[dataCopy["Raspberry"] == "Raspberry D"]
+    dataRE = dataCopy.loc[dataCopy["Raspberry"] == "Raspberry E"]
 
     return dataRA, dataRB, dataRC, dataRD, dataRE
 
@@ -123,11 +123,11 @@ def groupDataByRaspberryTime(data):
 
     dataRA, dataRB, dataRC, dataRD, dataRE = parseDataByRaspberry(data)
 
-    dataRA = dataRA.groupby('Timestamp').nunique()
-    dataRB = dataRB.groupby('Timestamp').nunique()
-    dataRC = dataRC.groupby('Timestamp').nunique()
-    dataRD = dataRD.groupby('Timestamp').nunique()
-    dataRE = dataRE.groupby('Timestamp').nunique()
+    dataRA = dataRA.groupby("Timestamp").nunique()
+    dataRB = dataRB.groupby("Timestamp").nunique()
+    dataRC = dataRC.groupby("Timestamp").nunique()
+    dataRD = dataRD.groupby("Timestamp").nunique()
+    dataRE = dataRE.groupby("Timestamp").nunique()
 
     return dataRA, dataRB, dataRC, dataRD, dataRE
 
@@ -192,15 +192,15 @@ def getTotalDevicesByPairRaspberries(data, state, sampling):
     nDevicesIntervalDataREMerge = dataRE.drop(columns="Nº Mensajes")
 
     # Merge de los datos de todas las Raspberries.
-    nDevicesIntervalDataRDEMerge = nDevicesIntervalDataRDMerge.merge(nDevicesIntervalDataREMerge, how='outer',
+    nDevicesIntervalDataRDEMerge = nDevicesIntervalDataRDMerge.merge(nDevicesIntervalDataREMerge, how="outer",
                                                                      on=("Timestamp", "MAC"), copy=False,
                                                                      suffixes=("_d", "_e"))
-    nDevicesIntervalDataRCDEMerge = nDevicesIntervalDataRDEMerge.merge(nDevicesIntervalDataRCMerge, how='outer',
+    nDevicesIntervalDataRCDEMerge = nDevicesIntervalDataRDEMerge.merge(nDevicesIntervalDataRCMerge, how="outer",
                                                                        on=("Timestamp", "MAC"), copy=False)
-    nDevicesIntervalDataRBCDEMerge = nDevicesIntervalDataRCDEMerge.merge(nDevicesIntervalDataRBMerge, how='outer',
+    nDevicesIntervalDataRBCDEMerge = nDevicesIntervalDataRCDEMerge.merge(nDevicesIntervalDataRBMerge, how="outer",
                                                                          on=("Timestamp", "MAC"), copy=False,
                                                                          suffixes=("_c", "_b"))
-    nDevicesIntervalDataRABCDEMerge = nDevicesIntervalDataRBCDEMerge.merge(nDevicesIntervalDataRAMerge, how='outer',
+    nDevicesIntervalDataRABCDEMerge = nDevicesIntervalDataRBCDEMerge.merge(nDevicesIntervalDataRAMerge, how="outer",
                                                                            on=("Timestamp", "MAC"), copy=False)
 
     # Los datos se agrupan por Timestamp y MAC.
@@ -342,7 +342,7 @@ def getTotalDevicesInPreviousInterval(data, state, sampling):
     dataCopy[(dataCopy.index.isin(RDDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry D"]))] = np.nan
     dataCopy[(dataCopy.index.isin(REDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry E"]))] = np.nan
 
-    day = dataCopy.index.date[0].strftime('%Y-%m-%d')
+    day = dataCopy.index.date[0].strftime("%Y-%m-%d")
 
     # Se eliminan los valores nulos y las columnas innecesarias.
     dataCopy.dropna(inplace=True)
@@ -397,7 +397,7 @@ def getTotalDevicesInTwoPreviousIntervals(data, state, sampling):
     dataCopy[(dataCopy.index.isin(RDDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry D"]))] = np.nan
     dataCopy[(dataCopy.index.isin(REDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry E"]))] = np.nan
 
-    day = dataCopy.index.date[0].strftime('%Y-%m-%d')
+    day = dataCopy.index.date[0].strftime("%Y-%m-%d")
 
     # Se eliminan los valores nulos y las columnas innecesarias.
     dataCopy.dropna(inplace=True)
@@ -437,7 +437,7 @@ def getTotalDevicesInTwoPreviousIntervals(data, state, sampling):
 def savePlotColumns(data, path, categoryName):
     """Función que guarda en una carpeta las gráficas para cada una de las columnas del training set."""
 
-    day = data["Timestamp"].iloc[0].date().strftime('%Y-%m-%d')
+    day = data["Timestamp"].iloc[0].date().strftime("%Y-%m-%d")
     imgFolder = Path("../figures", path, categoryName, day)
     if not imgFolder.exists():
         imgFolder.mkdir(parents=True)
@@ -520,7 +520,7 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
         personCount = personCountArray[i]
         state = stateArray[i]
 
-        day = data.index[0].date().strftime('%Y-%m-%d')
+        day = data.index[0].date().strftime("%Y-%m-%d")
 
         # Se cargan los estados de cada Raspberry y se agrupan en un tuple.
         RADownInterval = state.loc[state["RA(1/0)"] == 0].index
@@ -576,7 +576,7 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
         timestamp = pd.Series(np.zeros(len(timestamp)), index=timestamp, name="Timestamp")
         timestamp = setDateTimeLimits(timestamp, 0, day, False)
         timestamp = timestamp.resample(str(sampling) + "T").asfreq()
-        timestamp = timestamp.index.strftime('%Y-%m-%d %H:%M:%S')
+        timestamp = timestamp.index.strftime("%Y-%m-%d %H:%M:%S")
 
         # Se crea el dataframe con las columnas calculadas.
         dataSet = np.array(np.transpose([timestamp, personCount.values, minutes, totalMAC,

@@ -22,7 +22,7 @@ if not path2.exists():
 # Carga de datos.
 trainingSet = pd.read_csv("../results/learning/filled-learning-set.csv", sep=";")
 trainingSet["Timestamp"] = pd.to_datetime(trainingSet["Timestamp"])
-dates = trainingSet["Timestamp"].dt.strftime('%Y-%m-%d %H:%M:%S')
+dates = trainingSet["Timestamp"].dt.strftime("%Y-%m-%d %H:%M:%S")
 
 # División de datos.
 X = trainingSet.loc[:, (trainingSet.columns != "Timestamp") & (trainingSet.columns != "Ocupacion")]
