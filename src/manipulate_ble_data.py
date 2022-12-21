@@ -96,7 +96,7 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath, sampli
     # Para los datos del estado de las Raspberries, se genera la columna Timestamp y se eliminan las que no son necesarias.
     for file in statePath.iterdir():
         state = pd.read_csv(file, sep=';')
-        state.insert(0, "Timestamp", state.Fecha.str.cat(state.Hora, sep=" "))
+        state.insert(0, "Timestamp", state["Fecha"].str.cat(state["Hora"], sep=" "))
         state.drop(columns=["Fecha", "Hora", "Indice intervalo"], inplace=True)
         state["Timestamp"] = pd.to_datetime(state["Timestamp"], dayfirst=True)
         state.set_index("Timestamp", inplace=True)
