@@ -93,7 +93,7 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath, sampli
 
         personCountArray.append(personCount)
 
-    # Para los datos del estado de las Raspberries, se genera la columna Timestamp y se eliminan las que no son necesarias.
+    # Para los datos del estado de las Raspberry, se genera la columna Timestamp y se eliminan las que no son necesarias.
     for file in statePath.iterdir():
         state = pd.read_csv(file, sep=";")
         state.insert(0, "Timestamp", state["Fecha"].str.cat(state["Hora"], sep=" "))
@@ -136,7 +136,7 @@ def getTotalDevicesByRaspberry(data, state, sampling):
     """Función que devuelve conjuntos de datos con el número de dispositivos únicos filtrados por Raspberry y agrupados
     por Timestamp."""
 
-    # Se obtienen los datos filtrados por Raspberry y el estado de las Raspberries.
+    # Se obtienen los datos filtrados por Raspberry y el estado de las Raspberry.
     dataRA, dataRB, dataRC, dataRD, dataRE = groupDataByRaspberryTime(data)
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
@@ -176,11 +176,11 @@ def getTotalDevicesByRaspberry(data, state, sampling):
     return totalMACRA, totalMACRB, totalMACRC, totalMACRD, totalMACRE
 
 
-def getTotalDevicesByPairRaspberries(data, state, sampling):
+def getTotalDevicesByPairRaspberry(data, state, sampling):
     """Función que devuelve cuatro listas compuestas por los dispositivos captados en el mismo intervalo de tiempo por
     las parejas C-E, D-E, B-E y el trío C-D-E"""
 
-    # Se obtienen los datos filtrados por Raspberry y el estado de las Raspberries.
+    # Se obtienen los datos filtrados por Raspberry y el estado de las Raspberry.
     dataRA, dataRB, dataRC, dataRD, dataRE = parseDataByRaspberry(data)
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
@@ -191,7 +191,7 @@ def getTotalDevicesByPairRaspberries(data, state, sampling):
     nDevicesIntervalDataRDMerge = dataRD.drop(columns="Nº Mensajes")
     nDevicesIntervalDataREMerge = dataRE.drop(columns="Nº Mensajes")
 
-    # Merge de los datos de todas las Raspberries.
+    # Merge de los datos de todas las Raspberry.
     nDevicesIntervalDataRDEMerge = nDevicesIntervalDataRDMerge.merge(nDevicesIntervalDataREMerge, how="outer",
                                                                      on=("Timestamp", "MAC"), copy=False,
                                                                      suffixes=("_d", "_e"))
@@ -207,7 +207,7 @@ def getTotalDevicesByPairRaspberries(data, state, sampling):
     group = nDevicesIntervalDataRABCDEMerge.groupby(["Timestamp", "MAC"]).nunique()
 
     # Cada grupo está generado en función de que se cumplan las condiciones de que el dispositivo esté presente en
-    # las Raspberries que forman la pareja o trío.
+    # las Raspberry que forman la pareja o trío.
     group_CDE = group.loc[(group["Raspberry_c"] == 1) & (group["Raspberry_d"] == 1) & (group["Raspberry_e"] == 1)]
     group_CE = group.loc[(group["Raspberry_c"] == 1) & (group["Raspberry_e"] == 1)]
     group_DE = group.loc[(group["Raspberry_d"] == 1) & (group["Raspberry_e"] == 1)]
@@ -272,7 +272,7 @@ def getTotalDeviceByMessageNumber(data, state, sampling):
     """Función que devuelve tres listas por Raspberry, una por intervalo de número de mensajes por debajo
     de 10, entre 10 y 30 y superior a 30."""
 
-    # Se obtienen los datos filtrados por Raspberry y el estado de las Raspberries.
+    # Se obtienen los datos filtrados por Raspberry y el estado de las Raspberry.
     dataRA, dataRB, dataRC, dataRD, dataRE = parseDataByRaspberry(data)
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
@@ -329,7 +329,7 @@ def getTotalDevicesInPreviousInterval(data, state, sampling):
 
     dataCopy = data.copy()
 
-    # Se obtiene el estado de las Raspberries.
+    # Se obtiene el estado de las Raspberry.
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
     invalidDates = set(RADownInterval) & set(RBDownInterval) & set(RCDownInterval) & set(RDDownInterval) & set(
@@ -384,7 +384,7 @@ def getTotalDevicesInTwoPreviousIntervals(data, state, sampling):
 
     dataCopy = data.copy()
 
-    # Se obtiene el estado de las Raspberries.
+    # Se obtiene el estado de las Raspberry.
     RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
     invalidDates = set(RADownInterval) & set(RBDownInterval) & set(RCDownInterval) & set(RDDownInterval) & set(
@@ -557,7 +557,7 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
                                                                                                 sampling)
 
         # Se calculan los dispositivos únicos por par y trio de Raspberry.
-        totalMACRCDE, totalMACRCE, totalMACRDE, totalMACRBE = getTotalDevicesByPairRaspberries(data, RDownInterval,
+        totalMACRCDE, totalMACRCE, totalMACRDE, totalMACRBE = getTotalDevicesByPairRaspberry(data, RDownInterval,
                                                                                                sampling)
 
         # Se calculan los dispositivos únicos en función del número de mensajes por Raspberry.
