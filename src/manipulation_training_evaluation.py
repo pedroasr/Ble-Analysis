@@ -6,19 +6,19 @@ from val_models import valModels
 sampling = 5
 
 # Se limpian los datos en bruto, generando archivos csv en la carpeta results.
-cleanBLEData("../data/ble_learning", "../data/mac_filter.csv", sampling, "ble_learning")
+cleanBLEData("../data/ble_learning", "../data/mac_filter.csv", sampling, "ble_learning", "state_learning")
 
-cleanBLEData("../data/ble_validation", "../data/mac_filter.csv", sampling, "ble_validation")
+cleanBLEData("../data/ble_validation", "../data/mac_filter.csv", sampling, "ble_validation", "state_validation")
 
 # Se cargan los datos de entrenamiento y test.
 dataListTrain, personCountListTrain, stateListTrain = readAndPrepareDataFromDirectory("../results/ble_learning",
                                                                                       "../data/personcount_learning",
-                                                                                      "../data/state_learning",
+                                                                                      "../results/state_learning",
                                                                                       sampling)
 
 dataListVal, personCountListVal, stateListVal = readAndPrepareDataFromDirectory("../results/ble_validation",
                                                                                 "../data/personcount_validation",
-                                                                                "../data/state_validation", sampling)
+                                                                                "../results/state_validation", sampling)
 
 # Se procesan los datos hasta obtener los conjuntos de entrenamiento y test.
 getDataset(dataListTrain, personCountListTrain, stateListTrain, "learning", "Full", "Training", sampling)
