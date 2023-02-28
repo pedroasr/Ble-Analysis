@@ -1,6 +1,6 @@
+import datetime as dt
 import warnings
 from pathlib import Path
-import datetime as dt
 
 import numpy as np
 import pandas as pd
@@ -38,7 +38,7 @@ def cleanBLEData(dataPath, macList, sampling, tagBle, tagState):
         dataBle["Timestamp"] = pd.to_datetime(dataBle["Fecha"] + " " + dataBle["Hora"], dayfirst=True)
         day = dataBle["Timestamp"].iloc[0].date().strftime("%Y-%m-%d")
         initDate = dataBle["Timestamp"].min()
-        initDate = initDate - dt.timedelta(minutes=sampling-1, seconds=59)
+        initDate = initDate - dt.timedelta(minutes=sampling - 1, seconds=59)
         endDate = dataBle["Timestamp"].max()
         dataBle["Mensajes"] = 1
 
@@ -79,7 +79,7 @@ def cleanBLEData(dataPath, macList, sampling, tagBle, tagState):
 
             # Se genera la lista de estados de las Raspberry, identificando la MAC de señalización y añadiendo el estado
             # de cada Raspberry.
-            state = [date.strftime("%Y-%m-%d"), date.strftime("%H:%M:%S"), i+1]
+            state = [date.strftime("%Y-%m-%d"), date.strftime("%H:%M:%S"), i + 1]
             flagGroup = group.loc[group["MAC"] == "00:00:00:00:00:00"]
             activeRaspberry = list(flagGroup["Id"].unique())
             raspberryStates = [1 if x in activeRaspberry else 0 for x in ids]
@@ -92,7 +92,7 @@ def cleanBLEData(dataPath, macList, sampling, tagBle, tagState):
         pathBle = Path("../results", tagBle)
         if not pathBle.exists():
             pathBle.mkdir(parents=True)
-            
+
         pathState = Path("../results", tagState)
         if not pathState.exists():
             pathState.mkdir(parents=True)
@@ -100,6 +100,6 @@ def cleanBLEData(dataPath, macList, sampling, tagBle, tagState):
         # Se guarda el dataframe en un archivo CSV.
         pathBle = Path(pathBle, "ble-filter-clean-P_" + day + ".csv")
         filterData.to_csv(pathBle, sep=";", index=False)
-        
+
         pathState = Path(pathState, "state_" + day + ".csv")
         stateData.to_csv(pathState, sep=";", index=False)
