@@ -51,6 +51,15 @@ def cleanBLEData(dataPath, macList, sampling, tagBle, tagState):
         filterData = pd.DataFrame(columns=columns)
         stateData = pd.DataFrame(columns=stateColumns)
 
+        # Se añaden los datos de las Raspberry Pi que no han enviado ningún mensaje.
+        if dateList[0][0] != 0:
+            datesNotWork = fullDateList[0:dateList[0][0]]
+            for date in datesNotWork:
+                stateData = stateData.append(
+                    {"Fecha": date[1].strftime("%Y-%m-%d"), "Hora": date[1].strftime("%H:%M:%S"),
+                     "Indice intervalo": date[0] + 1, "RA(1/0)": 0, "RB(1/0)": 0, "RC(1/0)": 0, "RD(1/0)": 0,
+                     "RE(1/0)": 0}, ignore_index=True)
+
         # Para cada fecha disponible en la lista de fechas.
         for i, date in dateList:
             # Se obtiene la siguiente fecha a la actual. Se filtra el dataframe original entre cada pareja de fechas.
