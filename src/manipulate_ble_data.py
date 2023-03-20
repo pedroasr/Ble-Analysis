@@ -9,12 +9,12 @@ from matplotlib.dates import DateFormatter
 warnings.filterwarnings("ignore")
 
 
-def setDateTimeLimits(data, values, day, isDf=True):
+def setDateTimeLimits(data, values, day, sampling, isDf=True):
     """Función que devuelve un conjunto de datos con los límites de tiempo establecidos."""
 
     # Fecha y hora de inicio
     initDate = pd.to_datetime(day + " 07:00:00")
-    endDate = pd.to_datetime(day + " 21:55:00")
+    endDate = pd.to_datetime(day + " 21:"+str(60-sampling)+":00")
 
     # Si el conjunto de datos es un DataFrame, se trata de manera distinta una Serie.
     # Se crea un Dataframe con los valores pasados por argumento junto al Timestamp de inicio y fin y se concatenan.
@@ -45,17 +45,16 @@ def setDateTimeLimits(data, values, day, isDf=True):
     return data
 
 
-def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath, sampling):
+def readAndPrepareDataFromDirectory(dataPath, personCountPath, sampling):
     """Función que lee los archivos de datos de los receptores Bluetooth, del contador de personas y los estados de cada
     Raspberry y los concentra en un array."""
 
     # Todos los archivos csv se cargarán dentro de una lista para ser utilizados posteriormente.
     dataArray = []
     personCountArray = []
-    stateArray = []
     dataPath = Path(dataPath)
     personCountPath = Path(personCountPath)
-    statePath = Path(statePath)
+    stateArray = []
 
     print("Cargando datos BLE...")
     # Para los datos BLE, se cargan las columnas necesarias y eliminamos MAC de señalización.
@@ -63,6 +62,7 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath, sampli
         data = pd.read_csv(file, sep=";", usecols=["Timestamp int.", "Raspberry", "Nº Mensajes", "MAC"])
         data["Timestamp int."] = pd.to_datetime(data["Timestamp int."], dayfirst=True)
         data = data.rename(columns={"Timestamp int.": "Timestamp"})
+        stateArray.append(getRaspberryState(data, sampling))
         data = data.drop(data[data["MAC"] == "00:00:00:00:00:00"].index).reset_index(drop=True)
         data.set_index("Timestamp", inplace=True)
         dataArray.append(data)
@@ -96,19 +96,31 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath, sampli
 
         personCountArray.append(personCount)
 
-    print("Cargando datos de estado de las Raspberry...")
-    # Para los datos del estado de las Raspberry, se genera la columna Timestamp y se eliminan las que no son necesarias.
-    for file in statePath.iterdir():
-        state = pd.read_csv(file, sep=";")
-        state.insert(0, "Timestamp", state["Fecha"].str.cat(state["Hora"], sep=" "))
-        state.drop(columns=["Fecha", "Hora", "Indice intervalo"], inplace=True)
-        state["Timestamp"] = pd.to_datetime(state["Timestamp"], dayfirst=True)
-        state.set_index("Timestamp", inplace=True)
-        stateArray.append(state)
-
     return dataArray, personCountArray, stateArray
 
 
+def getRaspberryState(data, sampling):
+    """Función que devuelve un DataFrame con los estados de cada Raspberry."""
+
+    stateColumns = ["Timestamp", "RA(1/0)", "RB(1/0)", "RC(1/0)", "RD(1/0)", "RE(1/0)"]
+    stateIds = ["RA(1/0)", "RB(1/0)", "RC(1/0)", "RD(1/0)", "RE(1/0)"]
+    ids = ["Raspberry A", "Raspberry B", "Raspberry C", "Raspberry D", "Raspberry E"]
+
+    flagGroup = data.loc[data["MAC"] == "00:00:00:00:00:00"]
+
+    day = data["Timestamp"].iloc[0].date().strftime("%Y-%m-%d")
+    dateList = pd.date_range(start=day + " 07:00:00", end=day + " 21:"+str(60-sampling)+":00", freq=str(sampling) + "T")
+
+    state = pd.DataFrame(np.zeros([len(dateList), len(stateColumns)]), columns=stateColumns)
+    state["Timestamp"] = dateList
+
+    for date in dateList:
+        group = flagGroup.loc[flagGroup["Timestamp"] == date]
+        for i in range(len(ids)):
+            if group.loc[group["Raspberry"] == ids[i]]["Nº Mensajes"].values[0] != 0:
+                state.loc[state["Timestamp"] == date, stateIds[i]] = 1
+
+    return state
 def parseDataByRaspberry(data):
     """Función que devuelve un conjunto de datos filtrado por cada Raspberry. Devuelve un conjunto por Raspberry."""
 
@@ -161,7 +173,7 @@ def getTotalDevicesByRaspberry(data, state, sampling):
     # Bucle que recorre las listas anteriores y genera un conjunto de datos con el número de dispositivos únicos por
     # Raspberry y agrupados por Timestamp.
     for i, column in enumerate(dataArray):
-        column = setDateTimeLimits(column, [0], day)
+        column = setDateTimeLimits(column, [0], day, sampling)
         column = column.resample(str(sampling) + "T").asfreq().fillna(0)
         column.loc[statusList[i], "MAC"] = np.nan
 
@@ -374,7 +386,7 @@ def getTotalDevicesInPreviousInterval(data, state, sampling):
 
     # Se establece las fechas límite y se rellenan los huecos.
     totalMACPreviousInterval.set_index("Timestamp", inplace=True)
-    totalMACPreviousInterval = setDateTimeLimits(totalMACPreviousInterval, [0], day)
+    totalMACPreviousInterval = setDateTimeLimits(totalMACPreviousInterval, [0], day, sampling)
     totalMACPreviousInterval = totalMACPreviousInterval.resample(str(sampling) + "T").asfreq().fillna(0)
     totalMACPreviousInterval.loc[invalidDates] = np.nan
     totalMACPreviousInterval = np.array(totalMACPreviousInterval["MAC"].values)
@@ -430,7 +442,7 @@ def getTotalDevicesInTwoPreviousIntervals(data, state, sampling):
 
     # Se establece las fechas límite y se rellenan los huecos.
     totalMACTwoPreviousInterval.set_index("Timestamp", inplace=True)
-    totalMACTwoPreviousInterval = setDateTimeLimits(totalMACTwoPreviousInterval, [0], day)
+    totalMACTwoPreviousInterval = setDateTimeLimits(totalMACTwoPreviousInterval, [0], day, sampling)
     totalMACTwoPreviousInterval = totalMACTwoPreviousInterval.resample(str(sampling) + "T").asfreq().fillna(0)
     totalMACTwoPreviousInterval.loc[invalidDates] = np.nan
     totalMACTwoPreviousInterval = np.array(totalMACTwoPreviousInterval["MAC"].values)
@@ -551,7 +563,7 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
 
         # Se agrupa en función del Timestamp y se calculan los dispositivos únicos en cada intervalo.
         dataGroup = dataGroup.groupby("Timestamp").nunique()
-        dataGroup = setDateTimeLimits(dataGroup, [np.nan, np.nan, np.nan], day)
+        dataGroup = setDateTimeLimits(dataGroup, [np.nan, np.nan, np.nan], day, sampling)
         dataGroup = dataGroup.resample(str(sampling) + "T").asfreq()
         totalMAC = dataGroup["MAC"].values
 
