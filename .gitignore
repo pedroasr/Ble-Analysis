@@ -136,3 +136,6 @@ dmypy.json
 /results
 /Informes
 /models
+/analysis/ble-analysis-filter-clean.ipynb
+/analysis/ble-analysis-filter-clean_v1.ipynb
+/analysis/ble-analysis-filter-clean_v2.ipynb

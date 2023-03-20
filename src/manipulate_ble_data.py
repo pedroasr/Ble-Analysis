@@ -46,7 +46,8 @@ def setDateTimeLimits(data, values, day, isDf=True):
 
 
 def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath, sampling):
-    """Función que lee los archivos de datos de los receptores Bluetooth y del contador de personas y los concentra en un array"""
+    """Función que lee los archivos de datos de los receptores Bluetooth, del contador de personas y los estados de cada
+    Raspberry y los concentra en un array."""
 
     # Todos los archivos csv se cargarán dentro de una lista para ser utilizados posteriormente.
     dataArray = []
@@ -56,6 +57,7 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath, sampli
     personCountPath = Path(personCountPath)
     statePath = Path(statePath)
 
+    print("Cargando datos BLE...")
     # Para los datos BLE, se cargan las columnas necesarias y eliminamos MAC de señalización.
     for file in dataPath.iterdir():
         data = pd.read_csv(file, sep=";", usecols=["Timestamp int.", "Raspberry", "Nº Mensajes", "MAC"])
@@ -65,6 +67,7 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath, sampli
         data.set_index("Timestamp", inplace=True)
         dataArray.append(data)
 
+    print("Cargando datos del contador de personas...")
     # Para los datos del contador de personas, generando la columna Timestamp y agrupando los valores en intervalos de 5
     # minutos. En esta carga en el caso de generar un valor nulo, se interpola en caso de ser hora de estudio y posteiriormente,
     # se rellena con valores nulos para tener el mismo número de intervalos temporales que los datos BLE.
@@ -93,6 +96,7 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, statePath, sampli
 
         personCountArray.append(personCount)
 
+    print("Cargando datos de estado de las Raspberry...")
     # Para los datos del estado de las Raspberry, se genera la columna Timestamp y se eliminan las que no son necesarias.
     for file in statePath.iterdir():
         state = pd.read_csv(file, sep=";")
@@ -178,7 +182,7 @@ def getTotalDevicesByRaspberry(data, state, sampling):
 
 def getTotalDevicesByPairRaspberry(data, state, sampling):
     """Función que devuelve cuatro listas compuestas por los dispositivos captados en el mismo intervalo de tiempo por
-    las parejas C-E, D-E, B-E y el trío C-D-E"""
+    las parejas C-E, D-E, B-E y el trío C-D-E."""
 
     # Se obtienen los datos filtrados por Raspberry y el estado de las Raspberry.
     dataRA, dataRB, dataRC, dataRD, dataRE = parseDataByRaspberry(data)
@@ -252,7 +256,7 @@ def getTotalDevicesByPairRaspberry(data, state, sampling):
 
 
 def getDevicesByMessageRange(dataArray):
-    """Función que devuelve una lista con el número de dispositivos captados en función del número de mensajes recibidos"""
+    """Función que devuelve una lista con el número de dispositivos captados en función del número de mensajes recibidos."""
 
     # Busca los dispositivos que cumplen las condiciones de que el número de mensajes recibidos esté en el rango
     # especificado.
@@ -464,7 +468,7 @@ def savePlotColumns(data, path, categoryName):
 
 def fillSet(data, dates, sampling):
     """Función que completa el conjunto de datos filtrado rellenando los valores nulos o eliminando las filas
-    imposibles de interpolar"""
+    imposibles de interpolar."""
 
     dataCopy = data.copy()
 
@@ -482,7 +486,7 @@ def fillSet(data, dates, sampling):
 
 def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, path3, sampling, path1="../results"):
     """Función que devuelve un conjunto de datos para el algoritmo de Machine Learning y un dataframe con los valores
-    acumulados hasta ese momento"""
+    acumulados hasta ese momento."""
 
     path1 = Path(path1)
 
@@ -510,9 +514,8 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
 
     # En intervalos de cinco minutos, se crea la columna Minutes que indica el número de minutos transcurridos desde
     # las 7:00.
-    sample = 5
     length = len(personCountArray[0].index.unique())
-    minutes = np.linspace(0, (length - 1) * sample, length, dtype=int)
+    minutes = np.linspace(0, (length - 1) * sampling, length, dtype=int)
 
     # Para cada uno de los archivos cargados, es decir, días, se crea un dataframe con las columnas calculadas.
     for i in range(len(dataArray)):
@@ -558,7 +561,7 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
 
         # Se calculan los dispositivos únicos por par y trio de Raspberry.
         totalMACRCDE, totalMACRCE, totalMACRDE, totalMACRBE = getTotalDevicesByPairRaspberry(data, RDownInterval,
-                                                                                               sampling)
+                                                                                             sampling)
 
         # Se calculan los dispositivos únicos en función del número de mensajes por Raspberry.
         totalMACRA_10, totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30, totalMACRC_10, \

@@ -27,7 +27,7 @@ def cleanBLEData(dataPath, macList, sampling, tagBle, tagState):
         dataBle = pd.read_csv(file, sep=";")
 
         # Se eliminan las direcciones MAC que se encuentran en la lista de MAC a filtrar.
-        dataBle = dataBle[~dataBle.MAC.isin(macList.MAC)]
+        dataBle = dataBle[~dataBle["MAC"].isin(macList["MAC"])]
 
         # Se renombran los identificadores de las Raspberry Pi.
         dataBle["Id"] = dataBle["Id"].replace(["Raspberry1", "Raspberry2", "Raspberry3", "Raspberry5", "Raspberry7"],
@@ -55,10 +55,11 @@ def cleanBLEData(dataPath, macList, sampling, tagBle, tagState):
         if dateList[0][0] != 0:
             datesNotWork = fullDateList[0:dateList[0][0]]
             for date in datesNotWork:
-                stateData = stateData.append(
+                stateStep = pd.DataFrame(
                     {"Fecha": date[1].strftime("%Y-%m-%d"), "Hora": date[1].strftime("%H:%M:%S"),
                      "Indice intervalo": date[0] + 1, "RA(1/0)": 0, "RB(1/0)": 0, "RC(1/0)": 0, "RD(1/0)": 0,
-                     "RE(1/0)": 0}, ignore_index=True)
+                     "RE(1/0)": 0}, index=[0])
+                stateData = pd.concat([stateData, stateStep], ignore_index=True)
 
         # Para cada fecha disponible en la lista de fechas.
         for i, date in dateList:
