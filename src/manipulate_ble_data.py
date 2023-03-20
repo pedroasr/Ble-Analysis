@@ -14,7 +14,7 @@ def setDateTimeLimits(data, values, day, sampling, isDf=True):
 
     # Fecha y hora de inicio
     initDate = pd.to_datetime(day + " 07:00:00")
-    endDate = pd.to_datetime(day + " 21:"+str(60-sampling)+":00")
+    endDate = pd.to_datetime(day + " 21:" + str(60 - sampling) + ":00")
 
     # Si el conjunto de datos es un DataFrame, se trata de manera distinta una Serie.
     # Se crea un Dataframe con los valores pasados por argumento junto al Timestamp de inicio y fin y se concatenan.
@@ -109,7 +109,8 @@ def getRaspberryState(data, sampling):
     flagGroup = data.loc[data["MAC"] == "00:00:00:00:00:00"]
 
     day = data["Timestamp"].iloc[0].date().strftime("%Y-%m-%d")
-    dateList = pd.date_range(start=day + " 07:00:00", end=day + " 21:"+str(60-sampling)+":00", freq=str(sampling) + "T")
+    dateList = pd.date_range(start=day + " 07:00:00", end=day + " 21:" + str(60 - sampling) + ":00",
+                             freq=str(sampling) + "T")
 
     state = pd.DataFrame(np.zeros([len(dateList), len(stateColumns)]), columns=stateColumns)
     state["Timestamp"] = dateList
@@ -121,6 +122,8 @@ def getRaspberryState(data, sampling):
                 state.loc[state["Timestamp"] == date, stateIds[i]] = 1
 
     return state
+
+
 def parseDataByRaspberry(data):
     """Función que devuelve un conjunto de datos filtrado por cada Raspberry. Devuelve un conjunto por Raspberry."""
 
