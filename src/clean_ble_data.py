@@ -37,7 +37,6 @@ def cleanBLEData(dataPath, macList, sampling, tagBle):
         day = dataBle["Timestamp"].iloc[0].date().strftime("%Y-%m-%d")
         initDate = dataBle["Timestamp"].min()
         initDate = initDate - dt.timedelta(minutes=sampling - 1, seconds=59)
-        endDate = dataBle["Timestamp"].max()
         dataBle["Mensajes"] = 1
 
         # Lista con todos los Timestamps posibles, añadiendoles índice.

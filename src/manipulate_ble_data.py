@@ -52,9 +52,9 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, sampling):
     # Todos los archivos csv se cargarán dentro de una lista para ser utilizados posteriormente.
     dataArray = []
     personCountArray = []
+    stateArray = []
     dataPath = Path(dataPath)
     personCountPath = Path(personCountPath)
-    stateArray = []
 
     print("Cargando datos BLE...")
     # Para los datos BLE, se cargan las columnas necesarias y eliminamos MAC de señalización.
@@ -597,18 +597,12 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
         timestamp = timestamp.index.strftime("%Y-%m-%d %H:%M:%S")
 
         # Se crea el dataframe con las columnas calculadas.
-        dataSet = np.array(np.transpose([timestamp, personCount.values, minutes, totalMAC,
-                                         totalMACRA,
-                                         totalMACRB,
-                                         totalMACRC, totalMACRD, totalMACRE, totalMACRDE, totalMACRCE,
-                                         totalMACRCDE, totalMACRBE,
-                                         totalMACRA_10,
-                                         totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030,
-                                         totalMACRB_30, totalMACRC_10,
-                                         totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030,
-                                         totalMACRD_30, totalMACRE_10,
-                                         totalMACRE_1030, totalMACRE_30, totalMACPreviousInterval,
-                                         totalMACTwoPreviousInterval]))
+        dataSet = np.array(np.transpose([timestamp, personCount.values, minutes, totalMAC, totalMACRA, totalMACRB,
+                                         totalMACRC, totalMACRD, totalMACRE, totalMACRDE, totalMACRCE, totalMACRCDE,
+                                         totalMACRBE, totalMACRA_10, totalMACRA_1030, totalMACRA_30, totalMACRB_10,
+                                         totalMACRB_1030, totalMACRB_30, totalMACRC_10, totalMACRC_1030, totalMACRC_30,
+                                         totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10, totalMACRE_1030,
+                                         totalMACRE_30, totalMACPreviousInterval, totalMACTwoPreviousInterval]))
 
         # Se concatena el Dataframe creado al Dataframe que contiene todos los datos y se grafica.
         dataSet = pd.DataFrame(dataSet, columns=columns)
