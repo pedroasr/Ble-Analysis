@@ -85,7 +85,8 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, sampling):
         personCount["Ocupacion"] = (2 * personCount["Evento In-Out(1/0)"].astype(int) - 1).cumsum()
 
         # Se rellena e interpola los intervalos dentro de la ventana de estudio.
-        personCount = personCount.groupby(pd.Grouper(key="Timestamp", freq="5T")).last().fillna(method="ffill")
+        personCount = personCount.groupby(pd.Grouper(key="Timestamp", freq=str(sampling) + "T")).last().fillna(
+            method="ffill")
         personCount = personCount.round()
 
         # Se rellena los intervalos fuera de la ventana de estudio con valores nulos.

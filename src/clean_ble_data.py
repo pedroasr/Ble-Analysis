@@ -20,6 +20,8 @@ def cleanBLEData(dataPath, macList, sampling, tagBle):
 
     ids = ["Raspberry A", "Raspberry B", "Raspberry C", "Raspberry D", "Raspberry E"]
 
+    n = len(ids)
+
     # Para cada archivo disponible en la carpeta de datos.
     for file in dataPath.iterdir():
         dataBle = pd.read_csv(file, sep=";")
@@ -33,71 +35,84 @@ def cleanBLEData(dataPath, macList, sampling, tagBle):
                                                "Raspberry C"])
 
         # Se añade columna Timestamp.
-        dataBle["Timestamp"] = pd.to_datetime(dataBle["Fecha"] + " " + dataBle["Hora"], dayfirst=True)
-        day = dataBle["Timestamp"].iloc[0].date().strftime("%Y-%m-%d")
-        initDate = dataBle["Timestamp"].min()
+        dataBle["Timestamp int."] = pd.to_datetime(dataBle["Fecha"] + " " + dataBle["Hora"], dayfirst=True)
+        day = dataBle["Timestamp int."].iloc[0].date().strftime("%Y-%m-%d")
+        initDate = dataBle["Timestamp int."].min()
         initDate = initDate - dt.timedelta(minutes=sampling - 1, seconds=59)
         dataBle["Mensajes"] = 1
 
         # Lista con todos los Timestamps posibles, añadiendoles índice.
-        fullDateList = list(
-            enumerate(pd.date_range(start=day + " 07:00:00", end=day + " 22:00:00", freq=str(sampling) + "T")))
+        fullDateList = enumerate(
+            pd.date_range(start=day + " 07:00:00", end=day + " 21:" + str(60 - sampling) + ":00"))
+        fullDateList = [[x[0] + 1, x[1]] for x in fullDateList]
 
         # Filtrado para obtener los Timestamps coincidentes con los datos
         dateList = np.array([x for x in fullDateList if initDate <= x[1]])
-        filterData = pd.DataFrame(columns=columns)
+
+        # Se agrupan los valores, calculando el promedio de RSSI.
+        dataBle = dataBle.groupby(
+            [pd.Grouper(key="Timestamp int.", freq=str(sampling) + "T"), "Id", "MAC", "Tipo MAC", "Tipo ADV",
+             "ADV Size", "RSP Size", "Advertisement"]).sum()
+        dataBle["RSSI"] = np.round(dataBle["RSSI"] / dataBle["Mensajes"], 2)
+        dataBle["Indice int. muestreo"] = dataBle.apply(lambda x: dateList[dateList[:, 1] == x.name[0]][0][0], axis=1)
+        dataBle.reset_index(inplace=True)
+        dataBle.rename(
+            columns={"Mensajes": "Nº Mensajes", "ADV Size": "BLE Size", "Advertisement": "BLE Data", "Id": "Raspberry",
+                     "RSSI": "RSSI promedio"}, inplace=True)
 
         # Se añaden los datos de las Raspberry Pi que no han enviado ningún mensaje.
         if dateList[0][0] != 0:
-            datesNotWork = fullDateList[0:dateList[0][0]]
-            for date in datesNotWork:
+            datesNotWork = fullDateList[0:dateList[0][0] - 1]
+            z = len(datesNotWork)
+            dates = list(np.repeat([x[1] for x in datesNotWork], n))
+            intervals = list(np.repeat([x[0] for x in datesNotWork], n))
+            stateData = pd.DataFrame({"Indice int. muestreo": intervals, "Timestamp int.": dates, "Raspberry": ids * z,
+                                      "Nº Mensajes": [0] * n * z, "MAC": ["00:00:00:00:00:00"] * n * z,
+                                      "Tipo MAC": ["Public"] * n * z, "Tipo ADV": ["ADV_IND"] * n * z,
+                                      "BLE Size": [4] * n * z, "RSP Size": [0] * n * z, "BLE Data": ["abcd"] * n * z,
+                                      "RSSI promedio": [0] * n * z})
+            dataBle = pd.concat([stateData, dataBle], ignore_index=True)
+
+        # Se obtiene las horas para las que existe la MAC virtual y el número de Raspberry Pi que la han enviado.
+        flagGroup = dataBle.loc[dataBle["MAC"] == "00:00:00:00:00:00"]
+        flagGroup = flagGroup.groupby("Timestamp int.")["MAC"].count().to_frame()
+        flagGroup.reset_index(inplace=True)
+
+        # Comprueba si los intervalos tienen tantas MAC virtuales como Raspberry Pi.
+        validDates = flagGroup.loc[flagGroup["MAC"] == n]["Timestamp int."].to_list()
+        datesToCheck = [x for x in fullDateList if x[1] not in validDates]
+
+        timestampsList = []
+        idsList = []
+        intervalList = []
+
+        # Se crean las listas de la misma longitud, una para las horas, otra para los identificadores de Raspberry Pi y
+        # otra para los índices de intervalo.
+        for date in datesToCheck:
+            group = dataBle.loc[dataBle["Timestamp int."] == date[1]]
+            groupToCheck = group.loc[dataBle["MAC"] == "00:00:00:00:00:00"]
+            if groupToCheck.empty:
+                idsList += ids
+                timestampsList += [date[1]] * n
+                intervalList += [date[0]] * n
+            else:
                 for rasp in ids:
-                    stateData = pd.DataFrame({"Indice int. muestreo": date[0] + 1, "Timestamp int.": date[1],
-                                              "Raspberry": rasp, "Nº Mensajes": 0, "MAC": "00:00:00:00:00:00",
-                                              "Tipo MAC": "Public", "Tipo ADV": "ADV_IND", "BLE Size": 4, "RSP Size": 0,
-                                              "BLE Data": "abcd", "RSSI promedio": 0}, index=[0])
+                    if rasp not in groupToCheck["Raspberry"].to_list():
+                        idsList.append(rasp)
+                        timestampsList.append(date[1])
+                        intervalList.append(date[0])
 
-                    filterData = pd.concat([filterData, stateData], ignore_index=True)
+        # Se añaden los datos de las Raspberry Pi que no han enviado ningún mensaje.
+        k = len(idsList)
+        dataBle = pd.concat([dataBle, pd.DataFrame(
+            {"Indice int. muestreo": intervalList, "Timestamp int.": timestampsList, "Raspberry": idsList,
+             "Nº Mensajes": [0] * k, "MAC": ["00:00:00:00:00:00"] * k, "Tipo MAC": ["Public"] * k,
+             "Tipo ADV": ["ADV_IND"] * k, "BLE Size": [4] * k, "RSP Size": [0] * k, "BLE Data": ["abcd"] * k,
+             "RSSI promedio": [0] * k})], ignore_index=True)
 
-        # Para cada fecha disponible en la lista de fechas.
-        for i, date in dateList:
-            # Se obtiene la siguiente fecha a la actual. Se filtra el dataframe original entre cada pareja de fechas.
-            nextDate = [x for x in dateList if x[0] == i + 1]
-            try:
-                group = dataBle.loc[(dataBle["Timestamp"] >= date) & (dataBle["Timestamp"] < nextDate[0][1])]
-            except IndexError:
-                break
-
-            # Se agrupan los valores, calculando el promedio de RSSI.
-            group = group.groupby(["Id", "MAC", "Tipo MAC", "Tipo ADV", "ADV Size", "RSP Size", "Advertisement"]).sum()
-            group["RSSI promedio"] = np.round(group["RSSI"] / group["Mensajes"], 2)
-            group["Timestamp"] = date.strftime("%Y-%m-%d %H:%M:%S")
-            group["Indice int. muestreo"] = i + 1
-            group.reset_index(inplace=True)
-
-            # Se genera la lista de estados de las Raspberry, identificando la MAC de señalización y añadiendo el estado
-            # de cada Raspberry.
-            flagGroup = group.loc[group["MAC"] == "00:00:00:00:00:00"]
-            activeRaspberry = list(flagGroup["Id"].unique())
-
-            # Se añade la MAC de señalización nula a la Raspberry que no ha emitido dicha trama.
-
-            for rasp in ids:
-                if rasp not in activeRaspberry:
-                    filterData = pd.concat([filterData, pd.DataFrame(
-                        {"Indice int. muestreo": i + 1, "Timestamp int.": date.strftime("%Y-%m-%d %H:%M:%S"),
-                         "Raspberry": rasp, "Nº Mensajes": 0, "MAC": "00:00:00:00:00:00", "Tipo MAC": "Public",
-                         "Tipo ADV": "ADV_IND", "BLE Size": 4, "RSP Size": 0, "BLE Data": "abcd", "RSSI promedio": 0},
-                        index=[0])], ignore_index=True)
-
-            # Se genera la lista de datos limpios y se añade al dataframe, concatenandolos al final.
-            data = np.transpose(np.array(
-                [group["Indice int. muestreo"], group["Timestamp"], group["Id"], group["Mensajes"], group["MAC"],
-                 group["Tipo MAC"], group["Tipo ADV"], group["ADV Size"], group["RSP Size"], group["Advertisement"],
-                 group["RSSI promedio"]]))
-
-            filtData = pd.DataFrame(data, columns=columns)
-            filterData = pd.concat([filterData, filtData], ignore_index=True)
+        # Se ordena el Dataframe tanto por filas como por columnas.
+        dataBle.sort_values(by=["Indice int. muestreo", "Raspberry"], inplace=True)
+        dataBle = dataBle[columns]
 
         # Si no existe el directorio de salida, se crea.
         pathBle = Path("../results", tagBle)
@@ -106,4 +121,4 @@ def cleanBLEData(dataPath, macList, sampling, tagBle):
 
         # Se guarda el dataframe en un archivo CSV.
         pathBle = Path(pathBle, "ble-filter-clean-P_" + day + ".csv")
-        filterData.to_csv(pathBle, sep=";", index=False)
+        dataBle.to_csv(pathBle, sep=";", index=False)
