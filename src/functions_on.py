@@ -1,30 +1,64 @@
 import pandas as pd
+import numpy as np
+from datetime import date
+
+def cleanBLEData(data, macList, sampling):
+    """Función que limpia los datos en bruto, agrupando los valores en el intervalo de tiempo especificado."""
+
+    ids = ["Raspberry A", "Raspberry B", "Raspberry C", "Raspberry D", "Raspberry E"]
+
+    stateColumns = ["Fecha", "Hora", "Indice intervalo", "RA(1/0)", "RB(1/0)", "RC(1/0)", "RD(1/0)", "RE(1/0)"]
+
+    macList = pd.read_csv(macList, delimiter=";", usecols=["MAC"])
+
+    # Se eliminan las direcciones MAC que se encuentran en la lista de MAC a filtrar.
+    data = data[~data["MAC"].isin(macList["MAC"])]
+
+    # Se renombran los identificadores de las Raspberry Pi.
+    data["Id"] = data["Id"].replace(["Raspberry1", "Raspberry2", "Raspberry3", "Raspberry5", "Raspberry7"],
+                                          ["Raspberry A", "Raspberry D", "Raspberry B", "Raspberry E",
+                                           "Raspberry C"])
+
+    # Se añade columna Timestamp.
+    data["Timestamp"] = pd.to_datetime(data["Fecha"] + " " + data["Hora"], dayfirst=True)
+    day = date.today().strftime("%Y-%m-%d")
+
+    # Se agrupan los datos por intervalo de tiempo.
+    data = data.groupby([pd.Grouper("Timestamp", freq=str(sampling)+"T"), "Id", "MAC", "Tipo MAC", "Tipo ADV", "ADV Size", "RSP Size", "Advertisement"]).sum()
+    data.reset_index(inplace=True)
+
+    flagGroup = data.loc[data["MAC"] == "00:00:00:00:00:00"]
+    activeRaspberry = list(flagGroup["Id"].unique())
+    raspberryStates = [1 if x in activeRaspberry else 0 for x in ids]
+
+    state = pd.DataFrame([state], columns=stateColumns)
 
 
 def parseDataByRaspberry(data):
     """Función que devuelve un conjunto de datos filtrado por cada Raspberry. Devuelve un conjunto por Raspberry."""
 
-    dataInterval1 = data.loc[data['Raspberry'] == 'Raspberry A']
-    dataInterval2 = data.loc[data['Raspberry'] == 'Raspberry B']
-    dataInterval3 = data.loc[data['Raspberry'] == 'Raspberry C']
-    dataInterval4 = data.loc[data['Raspberry'] == 'Raspberry D']
-    dataInterval5 = data.loc[data['Raspberry'] == 'Raspberry E']
+    dataCopy = data.copy()
+    dataRA = dataCopy.loc[dataCopy["Raspberry"] == "Raspberry A"]
+    dataRB = dataCopy.loc[dataCopy["Raspberry"] == "Raspberry B"]
+    dataRC = dataCopy.loc[dataCopy["Raspberry"] == "Raspberry C"]
+    dataRD = dataCopy.loc[dataCopy["Raspberry"] == "Raspberry D"]
+    dataRE = dataCopy.loc[dataCopy["Raspberry"] == "Raspberry E"]
 
-    return dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5
+    return dataRA, dataRB, dataRC, dataRD, dataRE
 
 
-def parseDataByRaspberryTime(data):
+def groupDataByRaspberryTime(data):
     """Función que devuelve conjuntos de datos con valores únicos filtrados por Raspberry y agrupados por Timestamp."""
 
-    dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5 = parseDataByRaspberry(data)
+    dataRA, dataRB, dataRC, dataRD, dataRE = parseDataByRaspberry(data)
 
-    dataInterval1 = dataInterval1.groupby('Timestamp').nunique()
-    dataInterval2 = dataInterval2.groupby('Timestamp').nunique()
-    dataInterval3 = dataInterval3.groupby('Timestamp').nunique()
-    dataInterval4 = dataInterval4.groupby('Timestamp').nunique()
-    dataInterval5 = dataInterval5.groupby('Timestamp').nunique()
+    dataRA = dataRA.groupby("Timestamp").nunique()
+    dataRB = dataRB.groupby("Timestamp").nunique()
+    dataRC = dataRC.groupby("Timestamp").nunique()
+    dataRD = dataRD.groupby("Timestamp").nunique()
+    dataRE = dataRE.groupby("Timestamp").nunique()
 
-    return dataInterval1, dataInterval2, dataInterval3, dataInterval4, dataInterval5
+    return dataRA, dataRB, dataRC, dataRD, dataRE
 
 
 def getTotalDevicesByRaspberry(data):

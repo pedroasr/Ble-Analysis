@@ -1,4 +1,4 @@
-name: ocupacion2
+name: ocupacion
 channels:
   - conda-forge
   - defaults
