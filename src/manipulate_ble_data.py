@@ -45,6 +45,33 @@ def setDateTimeLimits(data, values, day, sampling, isDf=True):
     return data
 
 
+def getRaspberryState(data, sampling):
+    """Función que devuelve un DataFrame con los estados de cada Raspberry."""
+
+    stateColumns = ["Timestamp", "RA(1/0)", "RB(1/0)", "RC(1/0)", "RD(1/0)", "RE(1/0)"]
+    stateIds = ["RA(1/0)", "RB(1/0)", "RC(1/0)", "RD(1/0)", "RE(1/0)"]
+    ids = ["Raspberry A", "Raspberry B", "Raspberry C", "Raspberry D", "Raspberry E"]
+
+    flagGroup = data.loc[data["MAC"] == "00:00:00:00:00:00"]
+
+    day = data["Timestamp"].iloc[0].date().strftime("%Y-%m-%d")
+    dateList = pd.date_range(start=day + " 07:00:00", end=day + " 21:" + str(60 - sampling) + ":00",
+                             freq=str(sampling) + "T")
+
+    state = pd.DataFrame(np.zeros([len(dateList), len(stateColumns)]), columns=stateColumns)
+    state["Timestamp"] = dateList
+
+    for date in dateList:
+        group = flagGroup.loc[flagGroup["Timestamp"] == date]
+        for i in range(len(ids)):
+            if group.loc[group["Raspberry"] == ids[i]]["Nº Mensajes"].values[0] != 0:
+                state.loc[state["Timestamp"] == date, stateIds[i]] = 1
+
+    state.set_index("Timestamp", inplace=True)
+
+    return state
+
+
 def readAndPrepareDataFromDirectory(dataPath, personCountPath, sampling):
     """Función que lee los archivos de datos de los receptores Bluetooth, del contador de personas y los estados de cada
     Raspberry y los concentra en un array."""
@@ -52,9 +79,10 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, sampling):
     # Todos los archivos csv se cargarán dentro de una lista para ser utilizados posteriormente.
     dataArray = []
     personCountArray = []
-    stateArray = []
     dataPath = Path(dataPath)
     personCountPath = Path(personCountPath)
+
+    ids = ["Raspberry A", "Raspberry B", "Raspberry C", "Raspberry D", "Raspberry E"]
 
     print("Cargando datos BLE...")
     # Para los datos BLE, se cargan las columnas necesarias y eliminamos MAC de señalización.
@@ -62,8 +90,8 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, sampling):
         data = pd.read_csv(file, sep=";", usecols=["Timestamp int.", "Raspberry", "Nº Mensajes", "MAC"])
         data["Timestamp int."] = pd.to_datetime(data["Timestamp int."], dayfirst=True)
         data = data.rename(columns={"Timestamp int.": "Timestamp"})
-        stateArray.append(getRaspberryState(data, sampling))
-        data = data.drop(data[data["MAC"] == "00:00:00:00:00:00"].index).reset_index(drop=True)
+        state = getRaspberryState(data, sampling)
+        data = setState(data, state, ids)
         data.set_index("Timestamp", inplace=True)
         dataArray.append(data)
 
@@ -92,37 +120,39 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, sampling):
         # Se rellena los intervalos fuera de la ventana de estudio con valores nulos.
         day = personCount.index.date[0].strftime(format="%Y-%m-%d")
         personCount = personCount.loc[:, "Ocupacion"]
-        personCount = setDateTimeLimits(personCount, np.nan, day, False)
+        personCount = setDateTimeLimits(personCount, np.nan, day, sampling, False)
         personCount = personCount.resample(str(sampling) + "T").asfreq()
 
         personCountArray.append(personCount)
 
-    return dataArray, personCountArray, stateArray
+    return dataArray, personCountArray
 
 
-def getRaspberryState(data, sampling):
-    """Función que devuelve un DataFrame con los estados de cada Raspberry."""
+def setState(data, state, ids):
+    """Función que devuelve una tupla con los estados de cada Raspberry."""
 
-    stateColumns = ["Timestamp", "RA(1/0)", "RB(1/0)", "RC(1/0)", "RD(1/0)", "RE(1/0)"]
-    stateIds = ["RA(1/0)", "RB(1/0)", "RC(1/0)", "RD(1/0)", "RE(1/0)"]
-    ids = ["Raspberry A", "Raspberry B", "Raspberry C", "Raspberry D", "Raspberry E"]
+    RADownInterval = state.loc[state["RA(1/0)"] == 0].index
+    RBDownInterval = state.loc[state["RB(1/0)"] == 0].index
+    RCDownInterval = state.loc[state["RC(1/0)"] == 0].index
+    RDDownInterval = state.loc[state["RD(1/0)"] == 0].index
+    REDownInterval = state.loc[state["RE(1/0)"] == 0].index
 
-    flagGroup = data.loc[data["MAC"] == "00:00:00:00:00:00"]
+    RDownInterval = (RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval)
 
-    day = data["Timestamp"].iloc[0].date().strftime("%Y-%m-%d")
-    dateList = pd.date_range(start=day + " 07:00:00", end=day + " 21:" + str(60 - sampling) + ":00",
-                             freq=str(sampling) + "T")
+    for i in range(len(ids)):
+        datesNotWorking = data.loc[(data["Timestamp"].isin(RDownInterval[i])) & (data["Raspberry"] == ids[i])]
+        intervals = datesNotWorking["Indice int. muestreo"].unique()
+        n = len(intervals)
+        data = data.drop(datesNotWorking.index)
+        newRows = pd.DataFrame({"Indice int. muestreo": intervals, "Timestamp": datesNotWorking["Timestamp"].unique(),
+                                "Raspberry": [ids[i]] * n, "Nº Mensajes": [np.nan] * n, "MAC": [np.nan] * n,
+                                "Tipo MAC": [np.nan] * n, "Tipo ADV": [np.nan] * n, "BLE Size": [np.nan] * n,
+                                "RSP Size": [np.nan] * n, "BLE Data": [np.nan] * n, "RSSI promedio": [np.nan] * n})
+        data = pd.concat([data, newRows], ignore_index=True)
 
-    state = pd.DataFrame(np.zeros([len(dateList), len(stateColumns)]), columns=stateColumns)
-    state["Timestamp"] = dateList
+    data = data.sort_values(by=["Timestamp", "Raspberry"])
 
-    for date in dateList:
-        group = flagGroup.loc[flagGroup["Timestamp"] == date]
-        for i in range(len(ids)):
-            if group.loc[group["Raspberry"] == ids[i]]["Nº Mensajes"].values[0] != 0:
-                state.loc[state["Timestamp"] == date, stateIds[i]] = 1
-
-    return state
+    return data
 
 
 def parseDataByRaspberry(data):
@@ -152,13 +182,12 @@ def groupDataByRaspberryTime(data):
     return dataRA, dataRB, dataRC, dataRD, dataRE
 
 
-def getTotalDevicesByRaspberry(data, state, sampling):
+def getTotalDevicesByRaspberry(data, sampling):
     """Función que devuelve conjuntos de datos con el número de dispositivos únicos filtrados por Raspberry y agrupados
     por Timestamp."""
 
     # Se obtienen los datos filtrados por Raspberry y el estado de las Raspberry.
     dataRA, dataRB, dataRC, dataRD, dataRE = groupDataByRaspberryTime(data)
-    RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
     # Se eliminan las columnas innecesarias.
     dataRA.drop(columns=["Nº Mensajes", "Raspberry"], inplace=True)
@@ -169,7 +198,6 @@ def getTotalDevicesByRaspberry(data, state, sampling):
 
     # Se agrupan en listas para poder iterar y así evitar repetir código.
     dataArray = [dataRA, dataRB, dataRC, dataRD, dataRE]
-    statusList = [RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval]
     finalDataList = []
 
     day = data.index.date[0].strftime(format="%Y-%m-%d")
@@ -179,7 +207,6 @@ def getTotalDevicesByRaspberry(data, state, sampling):
     for i, column in enumerate(dataArray):
         column = setDateTimeLimits(column, [0], day, sampling)
         column = column.resample(str(sampling) + "T").asfreq().fillna(0)
-        column.loc[statusList[i], "MAC"] = np.nan
 
         finalDataList.append(column)
 
@@ -196,13 +223,12 @@ def getTotalDevicesByRaspberry(data, state, sampling):
     return totalMACRA, totalMACRB, totalMACRC, totalMACRD, totalMACRE
 
 
-def getTotalDevicesByPairRaspberry(data, state, sampling):
+def getTotalDevicesByPairRaspberry(data, sampling):
     """Función que devuelve cuatro listas compuestas por los dispositivos captados en el mismo intervalo de tiempo por
     las parejas C-E, D-E, B-E y el trío C-D-E."""
 
     # Se obtienen los datos filtrados por Raspberry y el estado de las Raspberry.
     dataRA, dataRB, dataRC, dataRD, dataRE = parseDataByRaspberry(data)
-    RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
     # Se elimina la columna innecesaria.
     nDevicesIntervalDataRAMerge = dataRA.drop(columns="Nº Mensajes")
@@ -245,24 +271,8 @@ def getTotalDevicesByPairRaspberry(data, state, sampling):
     for i, column in enumerate(dataArray):
         column.reset_index(inplace=True)
         column = column["Timestamp"].value_counts(sort=False)
-        column = setDateTimeLimits(column, 0, day, False)
+        column = setDateTimeLimits(column, 0, day, sampling, False)
         column = column.resample(str(sampling) + "T").asfreq().fillna(0)
-
-        # En función de que conjunto se esté procesando, aplican unos estados u otros.
-        if i == 0:
-            column.loc[RCDownInterval] = np.nan
-            column.loc[RDDownInterval] = np.nan
-            column.loc[REDownInterval] = np.nan
-        elif i == 1:
-            column.loc[RCDownInterval] = np.nan
-            column.loc[REDownInterval] = np.nan
-        elif i == 2:
-            column.loc[RDDownInterval] = np.nan
-            column.loc[REDownInterval] = np.nan
-        else:
-            column.loc[RBDownInterval] = np.nan
-            column.loc[REDownInterval] = np.nan
-
         finalDataList.append(column)
 
     # Destructuring de la lista para devolver los conjuntos de datos.
@@ -288,13 +298,12 @@ def getDevicesByMessageRange(dataArray):
     return finalDataList
 
 
-def getTotalDeviceByMessageNumber(data, state, sampling):
+def getTotalDeviceByMessageNumber(data, sampling):
     """Función que devuelve tres listas por Raspberry, una por intervalo de número de mensajes por debajo
     de 10, entre 10 y 30 y superior a 30."""
 
     # Se obtienen los datos filtrados por Raspberry y el estado de las Raspberry.
     dataRA, dataRB, dataRC, dataRD, dataRE = parseDataByRaspberry(data)
-    RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
 
     # Los datos se agrupan por Timestamp y MAC con la suma acumulada de mensajes.
     dataRA = dataRA.groupby(["Timestamp", "MAC"]).sum()
@@ -316,21 +325,8 @@ def getTotalDeviceByMessageNumber(data, state, sampling):
     for i, column in enumerate(dataArray):
         column.reset_index(inplace=True)
         column = column["Timestamp"].value_counts(sort=False)
-        column = setDateTimeLimits(column, 0, day, False)
+        column = setDateTimeLimits(column, 0, day, sampling, False)
         column = column.resample(str(sampling) + "T").asfreq().fillna(0)
-
-        # En función de que conjunto se esté procesando, aplican unos estados u otros.
-        if i < 3:
-            column.loc[RADownInterval] = np.nan
-        elif i < 6:
-            column.loc[RBDownInterval] = np.nan
-        elif i < 9:
-            column.loc[RCDownInterval] = np.nan
-        elif i < 12:
-            column.loc[RDDownInterval] = np.nan
-        else:
-            column.loc[REDownInterval] = np.nan
-
         finalDataList.append(column.values)
 
     # Destructuring de la lista para devolver los conjuntos de datos.
@@ -343,24 +339,11 @@ def getTotalDeviceByMessageNumber(data, state, sampling):
         totalMACRE_1030, totalMACRE_30
 
 
-def getTotalDevicesInPreviousInterval(data, state, sampling):
+def getTotalDevicesInPreviousInterval(data, sampling):
     """Función que devuelve una lista con el número de dispositivos registrados en el intervalo de tiempo actual y el
     anterior."""
 
     dataCopy = data.copy()
-
-    # Se obtiene el estado de las Raspberry.
-    RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
-
-    invalidDates = set(RADownInterval) & set(RBDownInterval) & set(RCDownInterval) & set(RDDownInterval) & set(
-        REDownInterval)
-
-    # Búsqueda en función del intervalo de tiempo y de Raspberry para comprobar su estado.
-    dataCopy[(dataCopy.index.isin(RADownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry A"]))] = np.nan
-    dataCopy[(dataCopy.index.isin(RBDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry B"]))] = np.nan
-    dataCopy[(dataCopy.index.isin(RCDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry C"]))] = np.nan
-    dataCopy[(dataCopy.index.isin(RDDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry D"]))] = np.nan
-    dataCopy[(dataCopy.index.isin(REDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry E"]))] = np.nan
 
     day = dataCopy.index.date[0].strftime("%Y-%m-%d")
 
@@ -392,30 +375,16 @@ def getTotalDevicesInPreviousInterval(data, state, sampling):
     totalMACPreviousInterval.set_index("Timestamp", inplace=True)
     totalMACPreviousInterval = setDateTimeLimits(totalMACPreviousInterval, [0], day, sampling)
     totalMACPreviousInterval = totalMACPreviousInterval.resample(str(sampling) + "T").asfreq().fillna(0)
-    totalMACPreviousInterval.loc[invalidDates] = np.nan
     totalMACPreviousInterval = np.array(totalMACPreviousInterval["MAC"].values)
 
     return totalMACPreviousInterval
 
 
-def getTotalDevicesInTwoPreviousIntervals(data, state, sampling):
+def getTotalDevicesInTwoPreviousIntervals(data, sampling):
     """Función que devuelve una lista con el número de dispositivos registrados en el intervalo de tiempo actual y los
     dos anteriores."""
 
     dataCopy = data.copy()
-
-    # Se obtiene el estado de las Raspberry.
-    RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval = state
-
-    invalidDates = set(RADownInterval) & set(RBDownInterval) & set(RCDownInterval) & set(RDDownInterval) & set(
-        REDownInterval)
-
-    # Búsqueda en función del intervalo de tiempo y de Raspberry para comprobar su estado.
-    dataCopy[(dataCopy.index.isin(RADownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry A"]))] = np.nan
-    dataCopy[(dataCopy.index.isin(RBDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry B"]))] = np.nan
-    dataCopy[(dataCopy.index.isin(RCDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry C"]))] = np.nan
-    dataCopy[(dataCopy.index.isin(RDDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry D"]))] = np.nan
-    dataCopy[(dataCopy.index.isin(REDownInterval)) & (dataCopy["Raspberry"].isin(["Raspberry E"]))] = np.nan
 
     day = dataCopy.index.date[0].strftime("%Y-%m-%d")
 
@@ -448,7 +417,6 @@ def getTotalDevicesInTwoPreviousIntervals(data, state, sampling):
     totalMACTwoPreviousInterval.set_index("Timestamp", inplace=True)
     totalMACTwoPreviousInterval = setDateTimeLimits(totalMACTwoPreviousInterval, [0], day, sampling)
     totalMACTwoPreviousInterval = totalMACTwoPreviousInterval.resample(str(sampling) + "T").asfreq().fillna(0)
-    totalMACTwoPreviousInterval.loc[invalidDates] = np.nan
     totalMACTwoPreviousInterval = np.array(totalMACTwoPreviousInterval["MAC"].values)
 
     return totalMACTwoPreviousInterval
@@ -482,7 +450,7 @@ def savePlotColumns(data, path, categoryName):
         plt.close()
 
 
-def fillSet(data, dates, sampling):
+def fillSet(data, sampling):
     """Función que completa el conjunto de datos filtrado rellenando los valores nulos o eliminando las filas
     imposibles de interpolar."""
 
@@ -492,15 +460,10 @@ def fillSet(data, dates, sampling):
     dataCopy.set_index("Timestamp", inplace=True)
     filledSet = dataCopy.resample(str(sampling) + "T").mean().interpolate()
 
-    # En las fechas donde hubo fallos, se eliminan las filas.
-    filledSet.loc[dates] = np.nan
-    filledSet.reset_index(inplace=True)
-    filledSet = filledSet.round(0)
-    filledSet.dropna(inplace=True)
     return filledSet
 
 
-def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, path3, sampling, path1="../results"):
+def getDataset(dataArray, personCountArray, categoryName, path2, path3, sampling, path1="../results"):
     """Función que devuelve un conjunto de datos para el algoritmo de Machine Learning y un dataframe con los valores
     acumulados hasta ese momento."""
 
@@ -537,63 +500,36 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
     for i in range(len(dataArray)):
         data = dataArray[i]
         personCount = personCountArray[i]
-        state = stateArray[i]
 
         day = data.index[0].date().strftime("%Y-%m-%d")
 
-        # Se cargan los estados de cada Raspberry y se agrupan en un tuple.
-        RADownInterval = state.loc[state["RA(1/0)"] == 0].index
-        RBDownInterval = state.loc[state["RB(1/0)"] == 0].index
-        RCDownInterval = state.loc[state["RC(1/0)"] == 0].index
-        RDDownInterval = state.loc[state["RD(1/0)"] == 0].index
-        REDownInterval = state.loc[state["RE(1/0)"] == 0].index
-        RDownInterval = (RADownInterval, RBDownInterval, RCDownInterval, RDDownInterval, REDownInterval)
-
-        invalidDates = set(RADownInterval) & set(RBDownInterval) & set(RCDownInterval) & set(RDDownInterval) & set(
-            REDownInterval)
-
-        # Añadimos valores nulos donde el estado de la Raspberry es 0.
-        dataGroup = data.copy()
-        dataGroup[
-            (dataGroup.index.isin(RADownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry A"]))] = np.nan
-        dataGroup[
-            (dataGroup.index.isin(RBDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry B"]))] = np.nan
-        dataGroup[
-            (dataGroup.index.isin(RCDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry C"]))] = np.nan
-        dataGroup[
-            (dataGroup.index.isin(RDDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry D"]))] = np.nan
-        dataGroup[
-            (dataGroup.index.isin(REDownInterval)) & (dataGroup["Raspberry"].isin(["Raspberry E"]))] = np.nan
-
         # Se agrupa en función del Timestamp y se calculan los dispositivos únicos en cada intervalo.
-        dataGroup = dataGroup.groupby("Timestamp").nunique()
+        dataGroup = data.groupby("Timestamp").nunique()
         dataGroup = setDateTimeLimits(dataGroup, [np.nan, np.nan, np.nan], day, sampling)
         dataGroup = dataGroup.resample(str(sampling) + "T").asfreq()
         totalMAC = dataGroup["MAC"].values
 
         # Se calculan los dispositivos únicos en cada Raspberry.
-        totalMACRA, totalMACRB, totalMACRC, totalMACRD, totalMACRE = getTotalDevicesByRaspberry(data, RDownInterval,
-                                                                                                sampling)
+        totalMACRA, totalMACRB, totalMACRC, totalMACRD, totalMACRE = getTotalDevicesByRaspberry(data, sampling)
 
         # Se calculan los dispositivos únicos por par y trio de Raspberry.
-        totalMACRCDE, totalMACRCE, totalMACRDE, totalMACRBE = getTotalDevicesByPairRaspberry(data, RDownInterval,
-                                                                                             sampling)
+        totalMACRCDE, totalMACRCE, totalMACRDE, totalMACRBE = getTotalDevicesByPairRaspberry(data, sampling)
 
         # Se calculan los dispositivos únicos en función del número de mensajes por Raspberry.
         totalMACRA_10, totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30, totalMACRC_10, \
             totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10, totalMACRE_1030, \
-            totalMACRE_30 = getTotalDeviceByMessageNumber(data, RDownInterval, sampling)
+            totalMACRE_30 = getTotalDeviceByMessageNumber(data, sampling)
 
         # Se calcula el número de dispositivos únicos en el intervalo anterior.
-        totalMACPreviousInterval = getTotalDevicesInPreviousInterval(data, RDownInterval, sampling)
+        totalMACPreviousInterval = getTotalDevicesInPreviousInterval(data, sampling)
 
         # Se calcula el número de dispositivos únicos en los dos intervalos anteriores.
-        totalMACTwoPreviousInterval = getTotalDevicesInTwoPreviousIntervals(data, RDownInterval, sampling)
+        totalMACTwoPreviousInterval = getTotalDevicesInTwoPreviousIntervals(data, sampling)
 
         # Se crea la lista de valores completos de Timestamp.
         timestamp = data.index.unique()
         timestamp = pd.Series(np.zeros(len(timestamp)), index=timestamp, name="Timestamp")
-        timestamp = setDateTimeLimits(timestamp, 0, day, False)
+        timestamp = setDateTimeLimits(timestamp, 0, day, sampling, False)
         timestamp = timestamp.resample(str(sampling) + "T").asfreq()
         timestamp = timestamp.index.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -619,7 +555,7 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
         filterDataSet = pd.concat([filterDataSet, filterSet], ignore_index=True)
 
         # Se concatena el Dataframe creado al Dataframe que contiene todos los datos finales y se grafica.
-        filledSet = fillSet(filterSet, invalidDates, sampling)
+        filledSet = fillSet(filterSet, sampling)
         filledDataSet = pd.concat([filledDataSet, filledSet], ignore_index=True)
 
         print("Guardando gráficas de los datos limpios de la fecha " + day + "...")

@@ -44,7 +44,7 @@ def cleanBLEData(dataPath, macList, sampling, tagBle):
                           freq=str(sampling) + "T"))
         dateList = np.array([[x[0] + 1, x[1]] for x in dateList])
 
-        # Se agrupan los valores, calculando el promedio de RSSI.
+        # Se agrupan los valores, calculando el promedio de RSSI y añadiendo el índice de cada intervalo.
         dataBle = dataBle.groupby(
             [pd.Grouper(key="Timestamp int.", freq=str(sampling) + "T"), "Id", "MAC", "Tipo MAC", "Tipo ADV",
              "ADV Size", "RSP Size", "Advertisement"]).sum()
