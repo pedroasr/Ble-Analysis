@@ -11,16 +11,18 @@ cleanBLEData("../data/ble_learning", "../data/mac_filter.csv", sampling, "ble_le
 cleanBLEData("../data/ble_validation", "../data/mac_filter.csv", sampling, "ble_validation")
 
 # Se cargan los datos de entrenamiento y test.
-dataListTrain, personCountListTrain = readAndPrepareDataFromDirectory("../results/ble_learning",
-                                                                      "../data/personcount_learning", sampling)
+dataListTrain, personCountListTrain, stateListTrain = readAndPrepareDataFromDirectory("../results/ble_learning",
+                                                                                      "../data/personcount_learning",
+                                                                                      sampling)
 
-dataListVal, personCountListVal = readAndPrepareDataFromDirectory("../results/ble_validation",
-                                                                  "../data/personcount_validation", sampling)
+dataListVal, personCountListVal, stateListVal = readAndPrepareDataFromDirectory("../results/ble_validation",
+                                                                                "../data/personcount_validation",
+                                                                                sampling)
 
 # Se procesan los datos hasta obtener los conjuntos de entrenamiento y test.
-getDataset(dataListTrain, personCountListTrain, "learning", "Full", "Training", sampling)
+getDataset(dataListTrain, personCountListTrain, stateListTrain, "learning", "Full", "Training", sampling)
 
-getDataset(dataListVal, personCountListVal, "validation", "Full", "Training", sampling)
+getDataset(dataListVal, personCountListVal, stateListVal, "validation", "Full", "Training", sampling)
 
 # Se entrenan los modelos y se evaluan los resultados.
 trainModels("../results/learning/filled-learning-set.csv")

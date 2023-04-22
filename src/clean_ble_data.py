@@ -64,7 +64,6 @@ def cleanBLEData(dataPath, macList, sampling, tagBle):
         # Comprueba si los intervalos tienen tantas MAC virtuales como Raspberry Pi.
         validDates = flagGroup.loc[flagGroup["MAC"] == n]["Timestamp int."].to_list()
         datesToCheck = [x for x in dateList if x[1] not in validDates]
-
         timestampsList = []
         idsList = []
         intervalList = []

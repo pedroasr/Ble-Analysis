@@ -51,7 +51,6 @@ def getRaspberryState(data, sampling):
     stateColumns = ["Timestamp", "RA(1/0)", "RB(1/0)", "RC(1/0)", "RD(1/0)", "RE(1/0)"]
     stateIds = ["RA(1/0)", "RB(1/0)", "RC(1/0)", "RD(1/0)", "RE(1/0)"]
     ids = ["Raspberry A", "Raspberry B", "Raspberry C", "Raspberry D", "Raspberry E"]
-
     flagGroup = data.loc[data["MAC"] == "00:00:00:00:00:00"]
 
     day = data["Timestamp"].iloc[0].date().strftime("%Y-%m-%d")
@@ -79,6 +78,7 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, sampling):
     # Todos los archivos csv se cargarán dentro de una lista para ser utilizados posteriormente.
     dataArray = []
     personCountArray = []
+    stateArray = []
     dataPath = Path(dataPath)
     personCountPath = Path(personCountPath)
 
@@ -87,11 +87,14 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, sampling):
     print("Cargando datos BLE...")
     # Para los datos BLE, se cargan las columnas necesarias y eliminamos MAC de señalización.
     for file in dataPath.iterdir():
-        data = pd.read_csv(file, sep=";", usecols=["Timestamp int.", "Raspberry", "Nº Mensajes", "MAC"])
+        data = pd.read_csv(file, sep=";")
         data["Timestamp int."] = pd.to_datetime(data["Timestamp int."], dayfirst=True)
         data = data.rename(columns={"Timestamp int.": "Timestamp"})
         state = getRaspberryState(data, sampling)
+        stateArray.append(state)
         data = setState(data, state, ids)
+        data.drop(data[data["MAC"] == "00:00:00:00:00:00"].index, inplace=True)
+        data = data[["Timestamp", "Raspberry", "Nº Mensajes", "MAC"]]
         data.set_index("Timestamp", inplace=True)
         dataArray.append(data)
 
@@ -125,7 +128,7 @@ def readAndPrepareDataFromDirectory(dataPath, personCountPath, sampling):
 
         personCountArray.append(personCount)
 
-    return dataArray, personCountArray
+    return dataArray, personCountArray, stateArray
 
 
 def setState(data, state, ids):
@@ -425,6 +428,7 @@ def getTotalDevicesInTwoPreviousIntervals(data, sampling):
 def savePlotColumns(data, path, categoryName):
     """Función que guarda en una carpeta las gráficas para cada una de las columnas del training set."""
 
+    data.reset_index(inplace=True)
     day = data["Timestamp"].iloc[0].date().strftime("%Y-%m-%d")
     imgFolder = Path("../figures", path, categoryName, day)
     if not imgFolder.exists():
@@ -450,20 +454,38 @@ def savePlotColumns(data, path, categoryName):
         plt.close()
 
 
-def fillSet(data, sampling):
-    """Función que completa el conjunto de datos filtrado rellenando los valores nulos o eliminando las filas
-    imposibles de interpolar."""
+def dropDisabledRows(data, state):
+    """Función que elimina las filas del Dataframe de datos en las que el estado de alguna Raspberry sea 0."""
 
-    dataCopy = data.copy()
+    cleanSet = data.copy()
+
+    # Se eliminan las filas en las que no haya valores del contador de personas.
+    cleanSet.dropna(subset=["Ocupacion"], inplace=True)
 
     # Se interpolan los valores en los que sea posible.
-    dataCopy.set_index("Timestamp", inplace=True)
-    filledSet = dataCopy.resample(str(sampling) + "T").mean().interpolate()
+    for index, row in state.iterrows():
+        if 0 in row.values:
+            cleanSet.drop(cleanSet[cleanSet["Timestamp"] == row[0]].index, inplace=True)
+
+    return cleanSet
+
+
+def fillSet(data):
+    """Función que rellena los valores faltantes del Dataframe de datos utilizando la mediana de los valores en
+    intervalos de una hora."""
+
+    filledSet = data.copy()
+    # Se rellenan los valores faltantes con la mediana de los valores en intervalos de una hora.
+    hours = list(range(7, 23))
+    for i in range(1, len(hours)):
+        dfMedian = filledSet.loc[
+            (filledSet["Timestamp"].dt.hour <= hours[i - 1]) & (filledSet["Timestamp"].dt.hour > hours[i])].median()
+        filledSet.fillna(dfMedian, inplace=True)
 
     return filledSet
 
 
-def getDataset(dataArray, personCountArray, categoryName, path2, path3, sampling, path1="../results"):
+def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, path3, sampling, path1="../results"):
     """Función que devuelve un conjunto de datos para el algoritmo de Machine Learning y un dataframe con los valores
     acumulados hasta ese momento."""
 
@@ -474,8 +496,7 @@ def getDataset(dataArray, personCountArray, categoryName, path2, path3, sampling
 
     # Columnas calculadas a partir de los datos de entrada.
     columns = ["Timestamp", "Ocupacion", "Minutes", "N MAC TOTAL", "N MAC RA", "N MAC RB", "N MAC RC", "N MAC RD",
-               "N MAC RE",
-               "N MAC RDE", "N MAC RCE", "N MAC RCDE", "N MAC RBE", "N MAC MEN RA 10", "N MAC MEN RA 10-30",
+               "N MAC RE", "N MAC RDE", "N MAC RCE", "N MAC RCDE", "N MAC RBE", "N MAC MEN RA 10", "N MAC MEN RA 10-30",
                "N MAC MEN RA 30", "N MAC MEN RB 10", "N MAC MEN RB 10-30", "N MAC MEN RB 30", "N MAC MEN RC 10",
                "N MAC MEN RC 10-30", "N MAC MEN RC 30", "N MAC MEN RD 10", "N MAC MEN RD 10-30", "N MAC MEN RD 30",
                "N MAC MEN RE 10", "N MAC MEN RE 10-30", "N MAC MEN RE 30", "N MAC INTERVALO ANTERIOR",
@@ -483,13 +504,13 @@ def getDataset(dataArray, personCountArray, categoryName, path2, path3, sampling
 
     # Columnas del conjunto de aprendizaje
     columnsFilter = ["Timestamp", "Ocupacion", "Minutes", "N MAC RA", "N MAC RB", "N MAC RC", "N MAC RD", "N MAC RE",
-                     "N MAC RDE", "N MAC RCE", "N MAC RCDE",
-                     "N MAC RBE", "N MAC MEN RA 10", "N MAC MEN RB 10", "N MAC MEN RC 10", "N MAC MEN RD 10",
-                     "N MAC MEN RE 10", "N MAC INTERVALO ANTERIOR", "N MAC DOS INTERVALOS ANTERIORES"]
+                     "N MAC RDE", "N MAC RCE", "N MAC RCDE", "N MAC RBE", "N MAC MEN RA 10", "N MAC MEN RB 10",
+                     "N MAC MEN RC 10", "N MAC MEN RD 10", "N MAC MEN RE 10", "N MAC INTERVALO ANTERIOR",
+                     "N MAC DOS INTERVALOS ANTERIORES"]
 
     rawDataSet = pd.DataFrame(columns=columns)
     filterDataSet = pd.DataFrame(columns=columnsFilter)
-    filledDataSet = pd.DataFrame(columns=columnsFilter)
+    cleanDataSet = pd.DataFrame(columns=columnsFilter)
 
     # En intervalos de cinco minutos, se crea la columna Minutes que indica el número de minutos transcurridos desde
     # las 7:00.
@@ -500,6 +521,7 @@ def getDataset(dataArray, personCountArray, categoryName, path2, path3, sampling
     for i in range(len(dataArray)):
         data = dataArray[i]
         personCount = personCountArray[i]
+        state = stateArray[i]
 
         day = data.index[0].date().strftime("%Y-%m-%d")
 
@@ -512,7 +534,7 @@ def getDataset(dataArray, personCountArray, categoryName, path2, path3, sampling
         # Se calculan los dispositivos únicos en cada Raspberry.
         totalMACRA, totalMACRB, totalMACRC, totalMACRD, totalMACRE = getTotalDevicesByRaspberry(data, sampling)
 
-        # Se calculan los dispositivos únicos por par y trio de Raspberry.
+        # Se calculan los dispositivos únicos por par y trío de Raspberry.
         totalMACRCDE, totalMACRCE, totalMACRDE, totalMACRBE = getTotalDevicesByPairRaspberry(data, sampling)
 
         # Se calculan los dispositivos únicos en función del número de mensajes por Raspberry.
@@ -555,11 +577,13 @@ def getDataset(dataArray, personCountArray, categoryName, path2, path3, sampling
         filterDataSet = pd.concat([filterDataSet, filterSet], ignore_index=True)
 
         # Se concatena el Dataframe creado al Dataframe que contiene todos los datos finales y se grafica.
-        filledSet = fillSet(filterSet, sampling)
-        filledDataSet = pd.concat([filledDataSet, filledSet], ignore_index=True)
+        cleanSet = dropDisabledRows(filterSet, state)
+        cleanDataSet = pd.concat([cleanDataSet, cleanSet], ignore_index=True)
 
         print("Guardando gráficas de los datos limpios de la fecha " + day + "...")
-        savePlotColumns(filledSet, path3, categoryName)
+        savePlotColumns(cleanSet, path3, categoryName)
+
+    filledDataSet = fillSet(cleanDataSet)
 
     name1 = categoryName + "-set.csv"
     name2 = "filter-" + categoryName + "-set.csv"
