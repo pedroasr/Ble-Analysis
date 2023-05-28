@@ -520,7 +520,7 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
     # Para cada uno de los archivos cargados, es decir, días, se crea un dataframe con las columnas calculadas.
     for i in range(len(dataArray)):
         data = dataArray[i]
-        personCount = personCountArray[i]
+        personCount = np.round(personCountArray[i])
         state = stateArray[i]
 
         day = data.index[0].date().strftime("%Y-%m-%d")
@@ -529,24 +529,24 @@ def getDataset(dataArray, personCountArray, stateArray, categoryName, path2, pat
         dataGroup = data.groupby("Timestamp").nunique()
         dataGroup = setDateTimeLimits(dataGroup, [np.nan, np.nan, np.nan], day, sampling)
         dataGroup = dataGroup.resample(str(sampling) + "T").asfreq()
-        totalMAC = dataGroup["MAC"].values
+        totalMAC = np.round(dataGroup["MAC"].values)
 
         # Se calculan los dispositivos únicos en cada Raspberry.
-        totalMACRA, totalMACRB, totalMACRC, totalMACRD, totalMACRE = getTotalDevicesByRaspberry(data, sampling)
+        totalMACRA, totalMACRB, totalMACRC, totalMACRD, totalMACRE = np.round(getTotalDevicesByRaspberry(data, sampling))
 
         # Se calculan los dispositivos únicos por par y trío de Raspberry.
-        totalMACRCDE, totalMACRCE, totalMACRDE, totalMACRBE = getTotalDevicesByPairRaspberry(data, sampling)
+        totalMACRCDE, totalMACRCE, totalMACRDE, totalMACRBE = np.round(getTotalDevicesByPairRaspberry(data, sampling))
 
         # Se calculan los dispositivos únicos en función del número de mensajes por Raspberry.
         totalMACRA_10, totalMACRA_1030, totalMACRA_30, totalMACRB_10, totalMACRB_1030, totalMACRB_30, totalMACRC_10, \
             totalMACRC_1030, totalMACRC_30, totalMACRD_10, totalMACRD_1030, totalMACRD_30, totalMACRE_10, totalMACRE_1030, \
-            totalMACRE_30 = getTotalDeviceByMessageNumber(data, sampling)
+            totalMACRE_30 = np.round(getTotalDeviceByMessageNumber(data, sampling))
 
         # Se calcula el número de dispositivos únicos en el intervalo anterior.
-        totalMACPreviousInterval = getTotalDevicesInPreviousInterval(data, sampling)
+        totalMACPreviousInterval = np.round(getTotalDevicesInPreviousInterval(data, sampling))
 
         # Se calcula el número de dispositivos únicos en los dos intervalos anteriores.
-        totalMACTwoPreviousInterval = getTotalDevicesInTwoPreviousIntervals(data, sampling)
+        totalMACTwoPreviousInterval = np.round(getTotalDevicesInTwoPreviousIntervals(data, sampling))
 
         # Se crea la lista de valores completos de Timestamp.
         timestamp = data.index.unique()
