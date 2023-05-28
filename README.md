@@ -1,7 +1,7 @@
 # Ble-Analysis
 
 Repositorio donde se almacena todo el trabajo de análisis, interpretación y transformación de los datos BLE recibidos en
-hasta conseguir un Set de datos final, entrenamiento de algoritmos de Machine Learning y su posteior evaluación.
+hasta conseguir un Set de datos final, entrenamiento de algoritmos de Machine Learning y su posterior evaluación.
 
 ## Estructura del repositorio
 
